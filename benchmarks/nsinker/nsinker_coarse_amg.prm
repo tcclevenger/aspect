@@ -7,7 +7,7 @@
 
 set Additional shared libraries            = ./libnsinker.so
 
-set Number of timings = 1 
+set Number of timings = 0  
 #set Timing output directory = timings/
 
 
@@ -29,7 +29,7 @@ subsection Solver parameters
     set GMRES solver restart length                     = 100
   end
   subsection AMG parameters
-    set AMG output details = false
+    set AMG output details = true
   end
 end
 

@@ -1,6 +1,6 @@
 #!/bin/bash                                                                                                      
 #PBS -l select=64:ncpus=16:mpiprocs=16:chip_type=e5-2665:interconnect=fdr:mem=61gb                                   
-#PBS -l walltime=1:00:00                                                                                            
+#PBS -l walltime=2:00:00                                                                                            
 #PBS -j oe                                                                                                          
 #PBS -N test                                                                                                        
 ##PBS -q compmath                                                                                                   
@@ -21,9 +21,12 @@ echo
 
 cd ../../
 
+
 echo "MatrixFree, 4 sinkers, 1e4 visc jump"
-for refinement in 6 7 8; do # 4 5 6 7
-  cp nsinker_mf.prm temp1024l.prm
+for refinement in 6 7 8 9 10; do # 4 5 6 7
+  cp global_mf.prm temp1024l.prm
+   
+  echo "set Number of timings = 0" >> temp1024l.prm
 
   echo "subsection Mesh refinement" >> temp1024l.prm
   echo "  set Initial global refinement = $refinement" >> temp1024l.prm
@@ -36,18 +39,16 @@ for refinement in 6 7 8; do # 4 5 6 7
   rm temp1024l.prm
 done
 
-echo "MatrixFree, 4 sinkers, 1e4 visc jump"
-cp adaptive_mf.prm temp1024l.prm
+#echo "MatrixFree, 4 sinkers, 1e4 visc jump"
+#cp adaptive_mf.prm temp1024l.prm
 
-echo "subsection Mesh refinement" >> temp1024l.prm
-echo "  set Initial global refinement = 4" >> temp1024l.prm
-echo "  set Initial adaptive refinement = 13" >> temp1024l.prm
-echo "end" >> temp1024l.prm
+#echo "subsection Mesh refinement" >> temp1024l.prm
+#echo "  set Initial global refinement = 4" >> temp1024l.prm
+#echo "  set Initial adaptive refinement = 10" >> temp1024l.prm
+#echo "end" >> temp1024l.prm
 
-echo "set Output directory = output/large-adaptive-1024" >> temp1024l.prm
-echo "set Timing output directory = timings-large/" >> temp1024l.prm
+#echo "set Output directory = output/large-adaptive-1024" >> temp1024l.prm
+#echo "set Timing output directory = timings-large/" >> temp1024l.prm
 
-mpirun -np $Nproc ./aspect temp1024l.prm
-rm temp1024l.prm
-
-
+#mpirun -np $Nproc ./aspect temp1024l.prm
+#rm temp1024l.prm
