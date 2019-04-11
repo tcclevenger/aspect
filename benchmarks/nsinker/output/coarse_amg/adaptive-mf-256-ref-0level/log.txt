@@ -1,0 +1,129 @@
+-----------------------------------------------------------------------------
+-- This is ASPECT, the Advanced Solver for Problems in Earth's ConvecTion.
+--     . version 2.1.0-pre (gmg, 0dd216e)
+--     . using deal.II 9.1.0-pre (master, 1bb29e4)
+--     . using Trilinos 12.10.1
+--     . using p4est 2.0.0
+--     . running in OPTIMIZED mode
+--     . running with 256 MPI processes
+-----------------------------------------------------------------------------
+
+Vectorization over 4 doubles = 256 bits (AVX), VECTORIZATION_LEVEL=2
+-----------------------------------------------------------------------------
+-- For information on how to cite ASPECT, see:
+--   https://aspect.geodynamics.org/citing.html?ver=2.1.0-pre&sha=0dd216e&src=code
+-----------------------------------------------------------------------------
+Number of active cells: 32,768 (on 6 levels)
+Number of degrees of freedom: 1,134,437 (823,875+35,937+274,625)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            32,768         859,812        23             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.67041
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.09 MB
+
+Number of active cells: 66,725 (on 7 levels)
+Number of degrees of freedom: 2,424,850 (1,760,814+77,098+586,938)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            66,725         1,837,912      24             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.99366
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.16 MB
+
+Number of active cells: 135,997 (on 8 levels)
+Number of degrees of freedom: 5,034,850 (3,656,274+159,818+1,218,758)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            135,997        3,816,092      24             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 2.0593
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.33 MB
+
+Number of active cells: 279,161 (on 9 levels)
+Number of degrees of freedom: 10,140,547 (7,365,984+319,235+2,455,328)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            279,161        7,685,219      24             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 2.63557
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.65 MB
+
+Number of active cells: 570,578 (on 9 levels)
+Number of degrees of freedom: 20,506,560 (14,898,342+642,104+4,966,114)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            570,578        15,540,446     23             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 3.35636
+
+
+   Postprocessing:
+     System matrix memory consumption:  1.29 MB
+
+Number of active cells: 1,164,066 (on 9 levels)
+Number of degrees of freedom: 41,051,746 (29,832,024+1,275,714+9,944,008)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            1,164,066      31,107,738     23             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 4.50327
+
+
+   Postprocessing:
+     System matrix memory consumption:  2.47 MB
+
+Number of active cells: 2,372,308 (on 10 levels)
+Number of degrees of freedom: 82,685,588 (60,094,938+2,559,004+20,031,646)
+
+*** Timestep 0:  t=0 seconds
+output: MPI_Ranks      Active Cells   Stokes DoFs    GMRES iterations: 
+output: 256            2,372,308      62,653,942     23             
+output: 
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 5.78737
+
+
+   Postprocessing:
+     System matrix memory consumption:  4.72 MB
+
+Termination requested by criterion: end time
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |       700s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Assemble Stokes system rhs      |        42 |      16.3s |       2.3% |
+| Initialization                  |         1 |    0.0729s |         0% |
+| Postprocessing                  |         7 |    0.0272s |         0% |
+| Refine mesh structure, part 1   |         6 |      8.72s |       1.2% |
+| Refine mesh structure, part 2   |         6 |      5.58s |       0.8% |
+| Setup dof systems               |        42 |       212s |        30% |
+| Setup initial conditions        |         7 |      8.55s |       1.2% |
+| Setup sparsity patterns         |         7 |      36.6s |       5.2% |
+| Solve Stokes system             |        42 |       374s |        53% |
++---------------------------------+-----------+------------+------------+
+
+-----------------------------------------------------------------------------
+-- For information on how to cite ASPECT, see:
+--   https://aspect.geodynamics.org/citing.html?ver=2.1.0-pre&sha=0dd216e&src=code
+-----------------------------------------------------------------------------

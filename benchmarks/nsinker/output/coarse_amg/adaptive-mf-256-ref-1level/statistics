@@ -1,0 +1,26 @@
+# 1: Time step number
+# 2: Time (seconds)
+# 3: Time step size (seconds)
+# 4: Number of mesh cells
+# 5: Number of Stokes degrees of freedom
+# 6: Number of temperature degrees of freedom
+# 7: Number of nonlinear iterations
+# 8: System matrix memory consumption (MB) 
+# 9: System matrix (0,0) memory consumption (MB) 
+# 10: System matrix (1,0) memory consumption (MB) 
+# 11: Preconditioner matrix (0,0) memory consumption (MB) 
+# 12: Preconditioner matrix (1,1) memory consumption (MB) 
+# 13: Triangulation memory consumption (MB) 
+# 14: p4est memory consumption (MB) 
+# 15: DoFHandler memory consumption (MB) 
+# 16: Matrix-free DoFHandler memory consumption (MB) 
+# 17: current_constraints memory consumption (MB) 
+# 18: Solution vector memory consumption (MB) 
+# 19: Peak virtual memory usage (VmPeak) (MB) 
+0 0.000000000000e+00 0.000000000000e+00   32768   859812   274625 0 0.0882 0.0000 0.0000 0.0000 0.0000 0.2593 0.0168  0.4443 0.5332 0.0792 0.1101  804.0977 
+0 0.000000000000e+00 0.000000000000e+00   66725  1837912   586938 0 0.1591 0.0000 0.0000 0.0000 0.0000 0.4032 0.0207  0.6507 0.7511 0.1310 0.1987  814.5234 
+0 0.000000000000e+00 0.000000000000e+00  135997  3816092  1218758 0 0.3330 0.0000 0.0000 0.0000 0.0000 0.7031 0.0285  1.9995 1.1932 0.5428 0.4071  840.0117 
+0 0.000000000000e+00 0.000000000000e+00  279154  7684987  2455254 0 0.6478 0.0000 0.0000 0.0000 0.0000 1.1383 0.0497  2.6397 1.8246 1.0439 0.7369  888.9180 
+0 0.000000000000e+00 0.000000000000e+00  570557 15539921  4965946 0 1.2884 0.0000 0.0000 0.0000 0.0000 2.0900 0.0868  4.0965 3.2258 2.2117 1.4645  985.2930 
+0 0.000000000000e+00 0.000000000000e+00 1164045 31107138  9943816 0 2.4684 0.0000 0.0000 0.0000 0.0000 3.6110 0.1843  6.2844 5.3120 3.7380 2.6465 1156.8672 
+0 0.000000000000e+00 0.000000000000e+00 2372280 62653080 20031371 0 4.7158 0.0000 0.0000 0.0000 0.0000 6.3781 0.3598 10.5392 9.3721 6.3762 4.9567 1421.1445 
