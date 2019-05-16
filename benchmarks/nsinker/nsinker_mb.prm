@@ -22,8 +22,8 @@ subsection Solver parameters
   subsection Stokes solver parameters
     set Stokes solver type = block AMG
     set Use full A block as preconditioner              = false 
-    set Number of cheap Stokes solver steps             = 200
-    set Maximum number of expensive Stokes solver steps = 1000
+    set Number of cheap Stokes solver steps             = 300
+    set Maximum number of expensive Stokes solver steps = 0
     set Linear solver tolerance                         = 1e-6
     set GMRES solver restart length                     = 100
   end
@@ -60,8 +60,8 @@ subsection Material model
   set Material averaging = harmonic average
 
   subsection NSinker
-    set Number of sinkers = 8 
-    set Dynamic viscosity ratio = 1e4
+    set Number of sinkers = 4 
+    set Dynamic viscosity ratio = 1e6
   end
 end
 

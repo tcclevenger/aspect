@@ -7,7 +7,7 @@
 
 set Additional shared libraries            = ./libnsinker.so
 
-#set Number of timings = 5
+set Number of timings = 0 
 #set Timing output directory = timings/
 
 set Dimension                              = 3
@@ -56,7 +56,7 @@ subsection Material model
 
   subsection NSinker
     set Number of sinkers = 12 
-    set Dynamic viscosity ratio = 1e4
+    set Dynamic viscosity ratio = 1e6
   end
 end
 
