@@ -956,6 +956,9 @@ namespace aspect
       DoFHandler<dim> dof_handler_p;
       DoFHandler<dim> dof_handler_projection;
 
+      ConstraintMatrix constraints_v;
+      ConstraintMatrix constraints_p;
+
 
     private:
       /**
@@ -984,10 +987,7 @@ namespace aspect
       LinearAlgebra::SparseMatrix coarse_matrix_amg;
       dealii::LinearAlgebra::distributed::Vector<double>  velocity_lumped_mass_matrix;
 
-      ConstraintMatrix stokes_constraints;
-      ConstraintMatrix constraints_v;
-      ConstraintMatrix constraints_p;
-      ConstraintMatrix constraints_projection;
+
 
       MGLevelObject<ABlockMatrixType> mg_velocity_matrices;
       MGConstrainedDoFs              mg_velocity_constrained_dofs;

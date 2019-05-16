@@ -55,7 +55,7 @@ subsection Material model
   set Material averaging = harmonic average
 
   subsection NSinker
-    set Number of sinkers = 4
+    set Number of sinkers = 12 
     set Dynamic viscosity ratio = 1e4
   end
 end
@@ -76,7 +76,7 @@ end
 
 
 subsection Mesh refinement
-  set Initial global refinement                = 3
+  set Initial global refinement                = 5 
   set Initial adaptive refinement              = 0
 end
 

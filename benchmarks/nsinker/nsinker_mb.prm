@@ -7,7 +7,7 @@
 
 set Additional shared libraries            = ./libnsinker.so
 
-set Number of timings = 5
+set Number of timings = 0 
 #set Timing output directory = timings/
 
 set Dimension                              = 3
@@ -51,7 +51,7 @@ subsection Boundary velocity model
 end
 
 subsection Mesh refinement
-  set Initial global refinement                = 3
+  set Initial global refinement                = 5 
   set Initial adaptive refinement              = 0
 end
 
@@ -60,7 +60,7 @@ subsection Material model
   set Material averaging = harmonic average
 
   subsection NSinker
-    set Number of sinkers = 4
+    set Number of sinkers = 8 
     set Dynamic viscosity ratio = 1e4
   end
 end

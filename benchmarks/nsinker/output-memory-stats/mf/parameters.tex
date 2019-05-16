@@ -58,6 +58,23 @@ For more information, see the section in the manual that discusses the general m
 
 
 {\it Possible values:} A floating point number $v$ such that $0 \leq v \leq \text{MAX\_DOUBLE}$
+\item {\it Parameter name:} {\tt Coarse level}
+\phantomsection\label{parameters:Coarse level}
+\label{parameters:Coarse_20level}
+
+
+\index[prmindex]{Coarse level}
+\index[prmindexfull]{Coarse level}
+{\it Value:} 0
+
+
+{\it Default:} 0
+
+
+{\it Description:} For GMG, level at which we switch to AMG.
+
+
+{\it Possible values:} An integer $n$ such that $0\leq n \leq 2147483647$
 \item {\it Parameter name:} {\tt Dimension}
 \phantomsection\label{parameters:Dimension}
 
@@ -220,7 +237,7 @@ For more information, see the section in the manual that discusses the general m
 {\it Value:} 0
 
 
-{\it Default:} 1
+{\it Default:} 0
 
 
 {\it Description:} Number of times to run each function for timing purposes in sinker and inclusion.
@@ -350,6 +367,23 @@ For more information, see the section in the manual that discusses the general m
 
 
 {\it Possible values:} An integer $n$ such that $0\leq n \leq 2147483647$
+\item {\it Parameter name:} {\tt Use BFBT}
+\phantomsection\label{parameters:Use BFBT}
+\label{parameters:Use_20BFBT}
+
+
+\index[prmindex]{Use BFBT}
+\index[prmindexfull]{Use BFBT}
+{\it Value:} false
+
+
+{\it Default:} false
+
+
+{\it Description:} Use BFBT preconditioner?
+
+
+{\it Possible values:} A boolean value (true or false)
 \item {\it Parameter name:} {\tt Use conduction timestep}
 \phantomsection\label{parameters:Use conduction timestep}
 \label{parameters:Use_20conduction_20timestep}

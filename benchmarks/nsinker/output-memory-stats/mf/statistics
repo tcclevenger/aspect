@@ -15,6 +15,7 @@
 # 15: DoFHandler memory consumption (MB) 
 # 16: Matrix-free DoFHandler memory consumption (MB) 
 # 17: current_constraints memory consumption (MB) 
-# 18: Solution vector memory consumption (MB) 
-# 19: Peak virtual memory usage (VmPeak) (MB) 
-0 0.000000000000e+00 0.000000000000e+00 4096 112724 35937 0 26.4896 0.0000 0.0000 0.0000 0.0000 1.8275 0.1454 2.8002 2.6513 1.0444 1.7020 2597.1641 
+# 18: Matrix-free Constraints memory consumption (MB) 
+# 19: Solution vector memory consumption (MB) 
+# 20: Peak virtual memory usage (VmPeak) (MB) 
+0 0.000000000000e+00 0.000000000000e+00 4096 112724 35937 0 1.9224 0.0000 0.0000 0.0000 0.0000 1.8275 0.1454 2.7952 2.9054 1.0444 1.7112 1.7019 2582.9258 

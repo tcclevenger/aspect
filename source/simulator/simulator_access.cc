@@ -733,6 +733,22 @@ namespace aspect
   }
 
   template <int dim>
+  const ConstraintMatrix &
+  SimulatorAccess<dim>::get_velocity_constraints () const
+  {
+    return simulator->stokes_matrix_free->constraints_v;
+  }
+
+  template <int dim>
+  const ConstraintMatrix &
+  SimulatorAccess<dim>::get_pressure_constraints () const
+  {
+    return simulator->stokes_matrix_free->constraints_p;
+  }
+
+
+
+  template <int dim>
   bool
   SimulatorAccess<dim>::simulator_is_initialized () const
   {
