@@ -63,6 +63,7 @@ DEAL_II_ENABLE_EXTRA_DIAGNOSTICS
 #include <aspect/boundary_velocity/interface.h>
 #include <aspect/boundary_fluid_pressure/interface.h>
 #include <aspect/boundary_traction/interface.h>
+#include <aspect/boundary_tangential_traction/interface.h>
 #include <aspect/mesh_refinement/interface.h>
 #include <aspect/termination_criteria/interface.h>
 #include <aspect/postprocess/interface.h>
@@ -1528,6 +1529,9 @@ namespace aspect
        *
        * This function is implemented in
        * <code>source/simulator/helper_functions.cc</code>.
+       *
+       * TODO: should be a check that velocity and tangential traction boundary are not on the
+       * boundary as well...
        */
       void
       check_consistency_of_boundary_conditions () const;
@@ -1683,6 +1687,7 @@ namespace aspect
       const std::unique_ptr<WorldBuilder::World>                              world_builder;
       BoundaryVelocity::Manager<dim>                                          boundary_velocity_manager;
       std::map<types::boundary_id,std::unique_ptr<BoundaryTraction::Interface<dim> > > boundary_traction;
+      std::map<types::boundary_id,std::unique_ptr<BoundaryTangentialTraction::Interface<dim> > > boundary_tangential_traction;
       const std::unique_ptr<BoundaryHeatFlux::Interface<dim> >                boundary_heat_flux;
 
       /**

@@ -20,7 +20,10 @@
 #include <aspect/simulator.h>
 #include <aspect/material_model/simple.h>
 #include <aspect/boundary_velocity/interface.h>
+#include <aspect/boundary_tangential_traction/interface.h>
 #include <aspect/simulator_access.h>
+#include <aspect/simulator/assemblers/stokes.h>
+
 #include <aspect/global.h>
 #include <aspect/gravity_model/interface.h>
 #include <aspect/postprocess/dynamic_topography.h>
@@ -107,6 +110,57 @@ namespace aspect
       }
 
 
+      Tensor<2,2>
+      Annulus_symmetric_gradient (const Point<2> &pos,
+                                  const double k)
+      {
+        const double x = pos[0];
+        const double y = pos[1];
+        const double r = std::sqrt(x*x+y*y);
+        const double theta = std::atan2(y,x);
+        const double f_r = A*r + B/r;
+        const double fprime = A - B/(r*r);
+        const double g_r = A*r/2 + B*std::log(r)/r + C/r;
+        const double gprime = A/2 - B*std::log(r)/(r*r) + B/(r*r) - C/(r*r);
+
+        const double v_r = g_r*k*sin(k*theta);
+        const double v_theta = f_r*cos(k*theta);
+
+        const double dr_vr = gprime*k*sin(k*theta);
+        const double dr_vtheta = fprime*cos(k*theta);
+        const double dtheta_vr = g_r*k*k*cos(k*theta);
+        const double dtheta_vtheta = -f_r*k*cos(k*theta);
+
+        const double dr_vx = cos(theta)*dr_vr - sin(theta)*dr_vtheta;
+        const double dr_vy = sin(theta)*dr_vr + cos(theta)*dr_vtheta;
+        const double dtheta_vx = cos(theta)*dtheta_vr - sin(theta)*v_r - sin(theta)*dtheta_vtheta - cos(theta)*v_theta;
+        const double dtheta_vy = sin(theta)*dtheta_vr + cos(theta)*v_r + cos(theta)*dtheta_vtheta - sin(theta)*v_theta;
+
+        const double dx_vx = cos(theta)*dr_vx - 1/r*sin(theta)*dtheta_vx;
+        const double dx_vy = cos(theta)*dr_vy - 1/r*sin(theta)*dtheta_vy;
+        const double dy_vx = sin(theta)*dr_vx + 1/r*cos(theta)*dtheta_vx;
+        const double dy_vy = sin(theta)*dr_vy + 1/r*cos(theta)*dtheta_vy;
+
+
+        Tensor<2,2> symmetric_gradient;
+        symmetric_gradient[0][0] = dx_vx;
+        symmetric_gradient[0][1] = (dy_vx+dx_vy)/2;
+        symmetric_gradient[1][0] = (dx_vy+dy_vx)/2;
+        symmetric_gradient[1][1] = dy_vy;
+        return symmetric_gradient;
+      }
+
+      Tensor<2,3>
+      Annulus_symmetric_gradient (const Point<3> &pos,
+                                  const double k)
+      {
+        (void)pos;
+        (void)k;
+        AssertThrow(false,ExcNotImplemented());
+        return Tensor<2,3>();
+      }
+
+
       /**
        * The exact solution for the Annulus benchmark.
        */
@@ -157,6 +211,29 @@ namespace aspect
         Tensor<1,dim>
         boundary_velocity (const types::boundary_id ,
                            const Point<dim> &position) const;
+
+      private:
+        const double beta;
+    };
+
+
+    template <int dim>
+    class AnnulusBoundaryTangentialTraction : public BoundaryTangentialTraction::Interface<dim>, public aspect::SimulatorAccess<dim>
+    {
+      public:
+        /**
+         * Constructor.
+         */
+        AnnulusBoundaryTangentialTraction();
+
+        /**
+         * Return the boundary velocity as a function of position.
+         */
+        virtual
+        Tensor<1,dim>
+        boundary_tangential_traction (const types::boundary_id ,
+                      const Point<dim> &position,
+                      const Tensor<1,dim> &normal_vector) const;
 
       private:
         const double beta;
@@ -367,6 +444,52 @@ namespace aspect
 
 
 
+    template <int dim>
+    AnnulusBoundaryTangentialTraction<dim>::AnnulusBoundaryTangentialTraction ()
+      :
+      beta (0)
+    {}
+
+
+
+    template <>
+    Tensor<1,2>
+    AnnulusBoundaryTangentialTraction<2>::
+    boundary_tangential_traction (const types::boundary_id ,
+                       const Point<2> &p,
+                       const Tensor<1,2> &n) const
+    {
+
+      const AnnulusMaterial<2> &
+      material_model
+        = Plugins::get_plugin_as_type<const AnnulusMaterial<2> >(this->get_material_model());
+
+      const Tensor<1,2> grad_u_dot_n =
+              AnalyticSolutions::Annulus_symmetric_gradient(p, material_model.get_beta())*n;
+
+      const Tensor<1,2> t = cross_product_2d(n);
+
+      const Tensor<1,2> grad_u_dot_n_X_n = scalar_product(grad_u_dot_n,t)*t;
+
+      return grad_u_dot_n_X_n;
+    }
+
+
+
+    template <>
+    Tensor<1,3>
+    AnnulusBoundaryTangentialTraction<3>::
+    boundary_tangential_traction (const types::boundary_id ,
+                       const Point<3> &,
+                       const Tensor<1,3> & ) const
+    {
+      Assert (false, ExcNotImplemented());
+      return Tensor<1,3>();
+    }
+
+
+
+
 
     /**
      * Gravity model for the Annulus benchmark
@@ -428,7 +551,7 @@ namespace aspect
     std::pair<std::string,std::string>
     AnnulusPostprocessor<dim>::execute (TableHandler &)
     {
-      std::unique_ptr<Function<dim> > ref_func;
+      std::shared_ptr<Function<dim> > ref_func;
       {
         const AnnulusMaterial<dim> &material_model
           = Plugins::get_plugin_as_type<const AnnulusMaterial<dim> >(this->get_material_model());
@@ -562,7 +685,6 @@ namespace aspect
 }
 
 
-
 // explicit instantiations
 namespace aspect
 {
@@ -575,6 +697,12 @@ namespace aspect
 
     ASPECT_REGISTER_BOUNDARY_VELOCITY_MODEL(AnnulusBoundary,
                                             "AnnulusBoundary",
+                                            "Implementation of the velocity boundary conditions for the "
+                                            "`Annulus' benchmark. See the manual for more information about this "
+                                            "benchmark.")
+
+    ASPECT_REGISTER_BOUNDARY_TANGENTIAL_TRACTION_MODEL(AnnulusBoundaryTangentialTraction,
+                                            "AnnulusBoundaryTangentialTraction",
                                             "Implementation of the velocity boundary conditions for the "
                                             "`Annulus' benchmark. See the manual for more information about this "
                                             "benchmark.")

@@ -104,6 +104,11 @@ namespace aspect
     template <int dim> class Interface;
   }
 
+  namespace BoundaryTangentialTraction
+  {
+    template <int dim> class Interface;
+  }
+
   namespace BoundaryVelocity
   {
     template <int dim> class Manager;
@@ -628,11 +633,18 @@ namespace aspect
       get_boundary_composition_manager () const;
 
       /**
-       * Return a reference to the object that describes traction
+       * Return a reference to the object that describes tangential traction
        * boundary conditions.
        */
       const std::map<types::boundary_id,std::unique_ptr<BoundaryTraction::Interface<dim> > > &
       get_boundary_traction () const;
+
+      /**
+       * Return a reference to the object that describes tangential traction
+       * boundary conditions.
+       */
+      const std::map<types::boundary_id,std::unique_ptr<BoundaryTangentialTraction::Interface<dim> > > &
+      get_boundary_tangential_traction () const;
 
       /**
        * Return a pointer to the object that describes the temperature initial

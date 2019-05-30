@@ -385,6 +385,13 @@ namespace aspect
     return simulator->boundary_traction;
   }
 
+  template <int dim>
+  const std::map<types::boundary_id,std::unique_ptr<BoundaryTangentialTraction::Interface<dim> > > &
+  SimulatorAccess<dim>::get_boundary_tangential_traction() () const
+  {
+    return simulator->boundary_tangential_traction;
+  }
+
 
 
   template <int dim>

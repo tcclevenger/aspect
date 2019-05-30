@@ -642,6 +642,15 @@ namespace aspect
     }
     prm.leave_subsection();
 
+    prm.enter_subsection ("Boundary tangential traction model");
+    {
+      prm.declare_entry ("Prescribed tangential traction boundary indicators", "",
+                         Patterns::Map (Patterns::Anything(),
+                                        Patterns::Selection(BoundaryTangentialTraction::get_names<dim>())),
+                         "");
+    }
+    prm.leave_subsection();
+
     prm.enter_subsection ("Boundary heat flux model");
     {
       prm.declare_entry ("Fixed heat flux boundary indicators", "",
@@ -1982,6 +1991,99 @@ namespace aspect
     }
     prm.leave_subsection ();
 
+    prm.enter_subsection ("Boundary tangential traction model");
+    {
+      const std::vector<std::string> x_prescribed_tangential_traction_boundary_indicators
+        = Utilities::split_string_list
+          (prm.get ("Prescribed tangential traction boundary indicators"));
+      for (std::vector<std::string>::const_iterator p = x_prescribed_tangential_traction_boundary_indicators.begin();
+           p != x_prescribed_tangential_traction_boundary_indicators.end(); ++p)
+        {
+          // each entry has the format (white space is optional):
+          // <id> [x][y][z] : <value (might have spaces)>
+          //
+          // first tease apart the two halves
+          const std::vector<std::string> split_parts = Utilities::split_string_list (*p, ':');
+          AssertThrow (split_parts.size() == 2,
+                       ExcMessage ("The format for prescribed traction boundary indicators "
+                                   "requires that each entry has the form `"
+                                   "<id> [x][y][z] : <value>', but there does not "
+                                   "appear to be a colon in the entry <"
+                                   + *p
+                                   + ">."));
+
+          // the easy part: get the value
+          const std::string value = split_parts[1];
+
+          // now for the rest. since we don't know whether there is a
+          // component selector, start reading at the end and subtracting
+          // letters x, y and z
+          std::string key_and_comp = split_parts[0];
+          std::string comp;
+          while ((key_and_comp.size()>0) &&
+                 ((key_and_comp[key_and_comp.size()-1] == 'x')
+                  ||
+                  (key_and_comp[key_and_comp.size()-1] == 'y')
+                  ||
+                  ((key_and_comp[key_and_comp.size()-1] == 'z') && (dim==3))))
+            {
+              comp += key_and_comp[key_and_comp.size()-1];
+              key_and_comp.erase (--key_and_comp.end());
+            }
+
+          // we've stopped reading component selectors now. there are three
+          // possibilities:
+          // - no characters are left. this means that key_and_comp only
+          //   consisted of a single word that only consisted of 'x', 'y'
+          //   and 'z's. then this would have been a mistake to classify
+          //   as a component selector, and we better undo it
+          // - the last character of key_and_comp is not a whitespace. this
+          //   means that the last word in key_and_comp ended in an 'x', 'y'
+          //   or 'z', but this was not meant to be a component selector.
+          //   in that case, put these characters back.
+          // - otherwise, we split successfully. eat spaces that may be at
+          //   the end of key_and_comp to get key
+          if (key_and_comp.size() == 0)
+            key_and_comp.swap (comp);
+          else if (key_and_comp[key_and_comp.size()-1] != ' ')
+            {
+              key_and_comp += comp;
+              comp = "";
+            }
+          else
+            {
+              while ((key_and_comp.size()>0) && (key_and_comp[key_and_comp.size()-1] == ' '))
+                key_and_comp.erase (--key_and_comp.end());
+            }
+
+          // finally, try to translate the key into a boundary_id. then
+          // make sure we haven't seen it yet
+          types::boundary_id boundary_id;
+          try
+            {
+              boundary_id = geometry_model.translate_symbolic_boundary_name_to_id(key_and_comp);
+            }
+          catch (const std::string &error)
+            {
+              AssertThrow (false, ExcMessage ("While parsing the entry <Boundary tangential traction model/Prescribed "
+                                              "tangential traction indicators>, there was an error. Specifically, "
+                                              "the conversion function complained as follows: "
+                                              + error));
+            }
+
+          AssertThrow (prescribed_tangential_traction_boundary_indicators.find(boundary_id)
+                       == prescribed_tangential_traction_boundary_indicators.end(),
+                       ExcMessage ("Boundary indicator <" + Utilities::int_to_string(boundary_id) +
+                                   "> appears more than once in the list of indicators "
+                                   "for nonzero tangential traction boundaries."));
+
+          // finally, put it into the list
+          prescribed_tangential_traction_boundary_indicators[boundary_id] =
+            std::pair<std::string,std::string>(comp,value);
+        }
+    }
+    prm.leave_subsection ();
+
     prm.enter_subsection ("Boundary heat flux model");
     {
       try
@@ -2028,6 +2130,7 @@ namespace aspect
     AdiabaticConditions::declare_parameters<dim> (prm);
     BoundaryVelocity::Manager<dim>::declare_parameters (prm);
     BoundaryTraction::declare_parameters<dim> (prm);
+    BoundaryTangentialTraction::declare_parameters<dim> (prm);
     BoundaryHeatFlux::declare_parameters<dim> (prm);
   }
 }

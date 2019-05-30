@@ -179,6 +179,13 @@ namespace aspect
           std_cxx14::make_unique<aspect::Assemblers::StokesBoundaryTraction<dim> >());
       }
 
+    // add the terms for traction boundary conditions
+    if (!boundary_tangential_traction.empty())
+      {
+        assemblers->stokes_system_on_boundary_face.push_back(
+          std_cxx14::make_unique<aspect::Assemblers::StokesBoundaryTangentialTraction<dim> >());
+      }
+
     // add the terms necessary to normalize the pressure
     if (do_pressure_rhs_compatibility_modification)
       assemblers->stokes_system.push_back(
@@ -743,6 +750,7 @@ namespace aspect
           // see if we need to assemble traction boundary conditions.
           // only if so do we actually need to have an FEFaceValues object
           parameters.prescribed_traction_boundary_indicators.size() > 0
+          || parameters.prescribed_tangential_traction_boundary_indicators.size() > 0
           ?
           update_values |
           update_quadrature_points |

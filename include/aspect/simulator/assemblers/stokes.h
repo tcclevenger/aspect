@@ -192,6 +192,22 @@ namespace aspect
                 internal::Assembly::CopyData::CopyDataBase<dim> &data_base) const;
     };
 
+
+    /**
+     * This class assembles the right-hand-side terms that are used to weakly
+     * prescribe the tangential traction.
+     */
+    template <int dim>
+    class StokesBoundaryTangentialTraction : public Assemblers::Interface<dim>,
+      public SimulatorAccess<dim>
+    {
+      public:
+        virtual
+        void
+        execute(internal::Assembly::Scratch::ScratchBase<dim>   &scratch_base,
+                internal::Assembly::CopyData::CopyDataBase<dim> &data_base) const;
+    };
+
     /**
      * This class computes the local pressure shape function integrals that
      * are later used to make the Stokes equations compatible to its right hand

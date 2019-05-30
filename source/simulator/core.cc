@@ -417,6 +417,21 @@ namespace aspect
         bv->initialize ();
       }
 
+    for (std::map<types::boundary_id,std::pair<std::string,std::string> >::const_iterator
+         p = parameters.prescribed_tangential_traction_boundary_indicators.begin();
+         p != parameters.prescribed_tangential_traction_boundary_indicators.end();
+         ++p)
+      {
+        BoundaryTangentialTraction::Interface<dim> *bv
+          = BoundaryTangentialTraction::create_boundary_tangential_traction<dim>
+            (p->second.second);
+        boundary_tangential_traction[p->first].reset (bv);
+        if (SimulatorAccess<dim> *sim = dynamic_cast<SimulatorAccess<dim>*>(bv))
+          sim->initialize_simulator(*this);
+        bv->parse_parameters (prm);
+        bv->initialize ();
+      }
+
     std::set<types::boundary_id> open_velocity_boundary_indicators
       = geometry_model->get_used_boundary_indicators();
     for (std::map<types::boundary_id,std::pair<std::string,std::vector<std::string> > >::const_iterator
@@ -675,14 +690,16 @@ namespace aspect
     if (prescribed_stokes_solution.get())
       prescribed_stokes_solution->update();
 
-    // do the same for the traction boundary conditions and other things
+    // do the same for the traction and tangential traction boundary conditions and other things
     // that end up in the bilinear form. we update those that end up in
     // the constraints object when calling compute_current_constraints()
     // above
     for (auto &p : boundary_traction)
       p.second->update ();
-  }
 
+    for (auto &p : boundary_tangential_traction)
+      p.second->update ();
+  }
 
 
   template <int dim>
@@ -1394,6 +1411,7 @@ namespace aspect
     // Setup matrix-free dofs
     if (stokes_matrix_free)
       stokes_matrix_free->setup_dofs();
+
   }
 
 

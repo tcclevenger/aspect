@@ -504,6 +504,15 @@ namespace aspect
      */
     std::map<types::boundary_id, std::pair<std::string,std::string> > prescribed_traction_boundary_indicators;
 
+
+    /**
+     * Map from boundary id to a pair "components", tangential traction boundary type,
+     * where components is of the format "[x][y][z]" and the tangential traction boundary
+     * type is mapped to one of the plugins of the tangential traction boundary  conditions
+     * (e.g. "function")
+     */
+    std::map<types::boundary_id, std::pair<std::string,std::string> > prescribed_tangential_traction_boundary_indicators;
+
     /**
      * A set of boundary ids on which the boundary_heat_flux objects
      * will be applied.

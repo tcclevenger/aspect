@@ -796,6 +796,68 @@ namespace aspect
             }
         }
     }
+
+
+
+    template <int dim>
+    void
+    StokesBoundaryTangentialTraction<dim>::execute (internal::Assembly::Scratch::ScratchBase<dim>   &scratch_base,
+                                     internal::Assembly::CopyData::CopyDataBase<dim> &data_base) const
+    {
+      // Assmeble RHS term
+      //        [(grad_u * n) X n] * (v X n)
+      internal::Assembly::Scratch::StokesSystem<dim> &scratch = dynamic_cast<internal::Assembly::Scratch::StokesSystem<dim>& > (scratch_base);
+      internal::Assembly::CopyData::StokesSystem<dim> &data = dynamic_cast<internal::Assembly::CopyData::StokesSystem<dim>& > (data_base);
+
+      const Introspection<dim> &introspection = this->introspection();
+      const FiniteElement<dim> &fe = scratch.finite_element_values.get_fe();
+
+      // see if any of the faces are traction boundaries for which
+      // we need to assemble force terms for the right hand side
+      const unsigned int stokes_dofs_per_cell = data.local_dof_indices.size();
+
+      const typename DoFHandler<dim>::face_iterator face = scratch.cell->face(scratch.face_number);
+
+      if (this->get_boundary_tangential_traction()
+          .find (face->boundary_id())
+          !=
+          this->get_boundary_tangential_traction().end())
+        {
+          for (unsigned int q=0; q<scratch.face_finite_element_values.n_quadrature_points; ++q)
+            {
+              const double eta = scratch.material_model_outputs.viscosities[q];
+              const Tensor<1,dim> grad_u_dot_n_X_n
+                = 2.0*eta*this->get_boundary_tangential_traction().find(
+                    face->boundary_id()
+                  )->second
+                  ->boundary_tangential_traction (face->boundary_id(),
+                                  scratch.face_finite_element_values.quadrature_point(q),
+                                  scratch.face_finite_element_values.normal_vector(q));
+
+
+
+              for (unsigned int i=0, i_stokes=0; i_stokes<stokes_dofs_per_cell; /*increment at end of loop*/)
+                {
+                  if (introspection.is_stokes_component(fe.system_to_component_index(i).first))
+                    {
+                      const Tensor<1,dim> shape_value(scratch.face_finite_element_values[introspection.extractors.velocities].value(i,q));
+                      Tensor<1,dim> v_X_n;
+                      if (dim == 2)
+                      {
+                        const Tensor<1,dim> t = cross_product_2d(scratch.face_finite_element_values.normal_vector(q));
+                        v_X_n = scalar_product(shape_value,t)*t;
+                      }
+                      else
+                        v_X_n = cross_product_3d(shape_value, scratch.face_finite_element_values.normal_vector(q));
+
+                      data.local_rhs(i_stokes) += (grad_u_dot_n_X_n*v_X_n)*scratch.face_finite_element_values.JxW(q);
+                      ++i_stokes;
+                    }
+                  ++i;
+                }
+            }
+        }
+    }
   }
 } // namespace aspect
 
@@ -805,16 +867,17 @@ namespace aspect
   namespace Assemblers
   {
 #define INSTANTIATE(dim) \
-  template class StokesPreconditioner<dim>; \
-  template class StokesCompressiblePreconditioner<dim>; \
-  template class StokesIncompressibleTerms<dim>; \
-  template class StokesCompressibleStrainRateViscosityTerm<dim>; \
-  template class StokesReferenceDensityCompressibilityTerm<dim>; \
-  template class StokesImplicitReferenceDensityCompressibilityTerm<dim>; \
-  template class StokesIsothermalCompressionTerm<dim>; \
-  template class StokesHydrostaticCompressionTerm<dim>; \
-  template class StokesPressureRHSCompatibilityModification<dim>; \
-  template class StokesBoundaryTraction<dim>;
+    template class StokesPreconditioner<dim>; \
+    template class StokesCompressiblePreconditioner<dim>; \
+    template class StokesIncompressibleTerms<dim>; \
+    template class StokesCompressibleStrainRateViscosityTerm<dim>; \
+    template class StokesReferenceDensityCompressibilityTerm<dim>; \
+    template class StokesImplicitReferenceDensityCompressibilityTerm<dim>; \
+    template class StokesIsothermalCompressionTerm<dim>; \
+    template class StokesHydrostaticCompressionTerm<dim>; \
+    template class StokesPressureRHSCompatibilityModification<dim>; \
+    template class StokesBoundaryTraction<dim>; \
+    template class StokesBoundaryTangentialTraction<dim>;
 
     ASPECT_INSTANTIATE(INSTANTIATE)
   }
