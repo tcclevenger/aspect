@@ -670,12 +670,6 @@ namespace aspect
                                                      dof_handler_projection,
                                                      true);
         mg_velocity_matrices[level].compute_diagonal();
-
-        mg_pressure_matrices[level].fill_viscosities(level_coef_dof_vec[level],
-                                                     sim.triangulation,
-                                                     dof_handler_projection,
-                                                     true);
-        mg_pressure_matrices[level].compute_diagonal();
       }
   }
 
@@ -783,8 +777,6 @@ namespace aspect
 
     double initial_nonlinear_residual = numbers::signaling_nan<double>();
     double final_linear_residual      = numbers::signaling_nan<double>();
-
-    LinearAlgebra::BlockVector distributed_stokes_solution (sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
 
     typedef dealii::LinearAlgebra::distributed::Vector<double> vector_t;
 
@@ -1381,8 +1373,6 @@ namespace aspect
 
         velocity_matrix.clear();
         velocity_matrix.initialize(ablock_mf_storage);
-
-        //velocity_matrix.initialize_dof_vector(velocity_lumped_mass_matrix);
       }
 
       // Mass matrix...
