@@ -651,11 +651,6 @@ namespace aspect
                                                       dof_handler_projection);
     mass_matrix.compute_diagonal();
 
-    poisson_matrix.fill_viscosities(active_coef_dof_vec,
-                                    sim.triangulation,
-                                    dof_handler_projection,
-                                    false);
-
 
     // Project to MG
     const unsigned int n_levels = sim.triangulation.n_global_levels();
