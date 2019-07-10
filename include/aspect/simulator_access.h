@@ -796,6 +796,12 @@ namespace aspect
       const ConstraintMatrix &
       get_current_constraints() const;
 
+      const ConstraintMatrix &
+      get_velocity_constraints() const;
+
+      const ConstraintMatrix &
+      get_pressure_constraints() const;
+
       /**
        * Return whether or not the current object has been initialized by providing it with
        * a pointer to a Simulator class object.

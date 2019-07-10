@@ -59,13 +59,24 @@ namespace aspect
         {
           statistics.add_value ("Matrix-free DoFHandler memory consumption (MB) ",
                                 (this->get_velocity_dof_handler().memory_consumption()+
-                                 this->get_pressure_dof_handler().memory_consumption())/mb);
+                                 this->get_pressure_dof_handler().memory_consumption()+
+                                 this->get_proj_dof_handler().memory_consumption())/mb);
         }
       else
         {
           statistics.add_value ("Matrix-free DoFHandler memory consumption (MB) ",0.0);
         }
       statistics.add_value ("current_constraints memory consumption (MB) ", this->get_current_constraints().memory_consumption()/mb);
+      if (this->using_stokes_matrix_free())
+        {
+          statistics.add_value ("Matrix-free Constraints memory consumption (MB) ",
+                                (this->get_velocity_constraints().memory_consumption()+
+                                 this->get_pressure_constraints().memory_consumption())/mb);
+        }
+      else
+        {
+          statistics.add_value ("Matrix-free Constraints memory consumption (MB) ",0.0);
+        }
       statistics.add_value ("Solution vector memory consumption (MB) ", this->get_solution().memory_consumption()/mb);
 
       if (output_vmpeak)

@@ -43,6 +43,9 @@ set Adiabatic surface temperature              = 0
 # than one will yield rather diffusive solutions. Units: None.
 set CFL number                                 = 1.0
 
+# For GMG, level at which we switch to AMG.
+set Coarse level                               = 0
+
 # The number of space dimensions you want to run this program in. ASPECT can
 # run in 2 and 3 space dimensions.
 set Dimension                                  = 3                             # default: 2
@@ -138,7 +141,7 @@ set Nonlinear solver tolerance                 = 1e-5
 
 # Number of times to run each function for timing purposes in sinker and
 # inclusion.
-set Number of timings                          = 0                             # default: 1
+set Number of timings                          = 0
 
 # The name of the directory into which all output files should be placed. This
 # may be an absolute or a relative path.
@@ -195,6 +198,9 @@ set Timing output directory                    = timings-tmp/
 # adjusted only for debugging and timing purposes. If the value is set to zero
 # it will also output timing information at the initiation timesteps.
 set Timing output frequency                    = 100
+
+# Use BFBT preconditioner?
+set Use BFBT                                   = false
 
 # Mantle convection simulations are often focused on convection dominated
 # systems. However, these codes can also be used to investigate systems where

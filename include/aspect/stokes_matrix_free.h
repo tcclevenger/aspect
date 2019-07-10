@@ -414,18 +414,21 @@ namespace aspect
 
 
 
-    template <int dim, int degree_v, typename number>
-    class ABlockOperator
+
+
+
+    template <int dim, int degree_p, typename number>
+    class PressurePoissonOperator
       : public MatrixFreeOperators::Base<dim, dealii::LinearAlgebra::distributed::Vector<number>>
     {
       public:
-        ABlockOperator ();
+        PressurePoissonOperator ();
         void clear ();
-        void fill_viscosities(const dealii::LinearAlgebra::distributed::Vector<number> &visc_vals,
-                              const Triangulation<dim> &tria,
-                              const DoFHandler<dim> &dof_handler_for_projection,
-                              const bool for_mg);
-        void output_visc (const unsigned int level, const unsigned int proc);
+        void fill_viscosities (const dealii::LinearAlgebra::distributed::Vector<number> &visc_vals,
+                               const Triangulation<dim> &tria,
+                               const DoFHandler<dim> &dof_handler_for_projection,
+                               bool for_mg);
+
         virtual void compute_diagonal ();
 
       private:
@@ -441,6 +444,207 @@ namespace aspect
                                      dealii::LinearAlgebra::distributed::Vector<number>  &dst,
                                      const unsigned int                               &dummy,
                                      const std::pair<unsigned int,unsigned int>       &cell_range) const;
+
+        Table<2, VectorizedArray<number> > viscosity;
+    };
+    template <int dim, int degree_p, typename number>
+    PressurePoissonOperator<dim,degree_p,number>::PressurePoissonOperator ()
+      :
+      MatrixFreeOperators::Base<dim, dealii::LinearAlgebra::distributed::Vector<number> >()
+    {}
+    template <int dim, int degree_p, typename number>
+    void
+    PressurePoissonOperator<dim,degree_p,number>::clear ()
+    {
+      viscosity.reinit(0, 0);
+      MatrixFreeOperators::Base<dim,dealii::LinearAlgebra::distributed::Vector<number> >::clear();
+    }
+
+    template <int dim, int degree_p, typename number>
+    void
+    PressurePoissonOperator<dim,degree_p,number>::
+    fill_viscosities (const dealii::LinearAlgebra::distributed::Vector<number> &visc_vals,
+                      const Triangulation<dim> &tria,
+                      const DoFHandler<dim> &dof_handler_for_projection,
+                      bool for_mg)
+    {
+      FEEvaluation<dim,degree_p,degree_p+2,1,number> pressure (*this->data, 0);
+      const unsigned int n_cells = this->data->n_macro_cells();
+      viscosity.reinit(n_cells, pressure.n_q_points);
+
+      std::vector<types::global_dof_index> local_dof_indices(dof_handler_for_projection.get_fe().dofs_per_cell);
+      for (unsigned int cell=0; cell<n_cells; ++cell)
+        for (unsigned int i=0; i<this->get_matrix_free()->n_components_filled(cell); ++i)
+          {
+
+            if (for_mg)
+              {
+                typename DoFHandler<dim>::level_cell_iterator FEQ_cell = this->get_matrix_free()->get_cell_iterator(cell,i);
+                typename DoFHandler<dim>::level_cell_iterator DG_cell(&tria,
+                                                                      FEQ_cell->level(),
+                                                                      FEQ_cell->index(),
+                                                                      &dof_handler_for_projection);
+                DG_cell->get_active_or_mg_dof_indices(local_dof_indices);
+              }
+            else
+              {
+                typename DoFHandler<dim>::active_cell_iterator FEQ_cell = this->get_matrix_free()->get_cell_iterator(cell,i);
+                typename DoFHandler<dim>::active_cell_iterator DG_cell(&tria,
+                                                                       FEQ_cell->level(),
+                                                                       FEQ_cell->index(),
+                                                                       &dof_handler_for_projection);
+                DG_cell->get_active_or_mg_dof_indices(local_dof_indices);
+              }
+
+            //TODO: projection with higher degree
+            Assert(local_dof_indices.size() == 1, ExcNotImplemented());
+            for (unsigned int q=0; q<pressure.n_q_points; ++q)
+              viscosity(cell,q)[i] = 1.0/sqrt(visc_vals(local_dof_indices[0]));
+          }
+    }
+
+    template <int dim, int degree_p, typename number>
+    void
+    PressurePoissonOperator<dim,degree_p,number>
+    ::local_apply (const dealii::MatrixFree<dim, number>                 &data,
+                   dealii::LinearAlgebra::distributed::Vector<number>       &dst,
+                   const dealii::LinearAlgebra::distributed::Vector<number> &src,
+                   const std::pair<unsigned int, unsigned int>           &cell_range) const
+    {
+      FEEvaluation<dim,degree_p,degree_p+2,1,number> pressure (data);
+
+      for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+        {
+          AssertDimension(viscosity.size(0), data.n_macro_cells());
+          AssertDimension(viscosity.size(1), pressure.n_q_points);
+
+          pressure.reinit (cell);
+          pressure.read_dof_values(src);
+          pressure.evaluate (false, true);
+          for (unsigned int q=0; q<pressure.n_q_points; ++q)
+            pressure.submit_gradient(viscosity(cell,q)*
+                                     pressure.get_gradient(q),q);
+          pressure.integrate (false, true);
+          pressure.distribute_local_to_global (dst);
+        }
+    }
+    template <int dim, int degree_p, typename number>
+    void
+    PressurePoissonOperator<dim,degree_p,number>
+    ::apply_add (dealii::LinearAlgebra::distributed::Vector<number> &dst,
+                 const dealii::LinearAlgebra::distributed::Vector<number> &src) const
+    {
+      MatrixFreeOperators::Base<dim,dealii::LinearAlgebra::distributed::Vector<number> >::
+      data->cell_loop(&PressurePoissonOperator::local_apply, this, dst, src);
+    }
+    template <int dim, int degree_p, typename number>
+    void
+    PressurePoissonOperator<dim,degree_p,number>
+    ::compute_diagonal ()
+    {
+      this->inverse_diagonal_entries.
+      reset(new DiagonalMatrix<dealii::LinearAlgebra::distributed::Vector<number> >());
+      this->diagonal_entries.
+      reset(new DiagonalMatrix<dealii::LinearAlgebra::distributed::Vector<number> >());
+
+      dealii::LinearAlgebra::distributed::Vector<number> &inverse_diagonal =
+        this->inverse_diagonal_entries->get_vector();
+      dealii::LinearAlgebra::distributed::Vector<number> &diagonal =
+        this->diagonal_entries->get_vector();
+
+      unsigned int dummy = 0;
+      this->data->initialize_dof_vector(inverse_diagonal);
+      this->data->initialize_dof_vector(diagonal);
+
+      this->data->cell_loop (&PressurePoissonOperator::local_compute_diagonal, this,
+                             diagonal, dummy);
+
+      this->set_constrained_entries_to_one(diagonal);
+      inverse_diagonal = diagonal;
+      const unsigned int local_size = inverse_diagonal.local_size();
+      for (unsigned int i=0; i<local_size; ++i)
+        {
+          Assert(inverse_diagonal.local_element(i) > 0.,
+                 ExcMessage("No diagonal entry in a positive definite operator "
+                            "should be zero"));
+          inverse_diagonal.local_element(i)
+            =1./inverse_diagonal.local_element(i);
+        }
+    }
+    template <int dim, int degree_p, typename number>
+    void
+    PressurePoissonOperator<dim,degree_p,number>
+    ::local_compute_diagonal (const MatrixFree<dim,number>                     &data,
+                              dealii::LinearAlgebra::distributed::Vector<number>  &dst,
+                              const unsigned int &,
+                              const std::pair<unsigned int,unsigned int>       &cell_range) const
+    {
+      FEEvaluation<dim,degree_p,degree_p+2,1,number> pressure (data, 0);
+      for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+        {
+          pressure.reinit (cell);
+          AlignedVector<VectorizedArray<number> > diagonal(pressure.dofs_per_cell);
+          for (unsigned int i=0; i<pressure.dofs_per_cell; ++i)
+            {
+              for (unsigned int j=0; j<pressure.dofs_per_cell; ++j)
+                pressure.begin_dof_values()[j] = VectorizedArray<number>();
+              pressure.begin_dof_values()[i] = make_vectorized_array<number> (1.);
+
+              pressure.evaluate (false,true);
+              for (unsigned int q=0; q<pressure.n_q_points; ++q)
+                pressure.submit_gradient(viscosity(cell,q)*
+                                         pressure.get_gradient(q),q);
+              pressure.integrate (false,true);
+
+              diagonal[i] = pressure.begin_dof_values()[i];
+            }
+
+          for (unsigned int i=0; i<pressure.dofs_per_cell; ++i)
+            pressure.begin_dof_values()[i] = diagonal[i];
+          pressure.distribute_local_to_global (dst);
+        }
+    }
+
+
+
+
+
+
+
+    template <int dim, int degree_v, typename number>
+    class ABlockOperator
+      : public MatrixFreeOperators::Base<dim, dealii::LinearAlgebra::distributed::Vector<number>>
+    {
+      public:
+        ABlockOperator ();
+        void clear ();
+        void fill_viscosities(const dealii::LinearAlgebra::distributed::Vector<number> &visc_vals,
+                              const Triangulation<dim> &tria,
+                              const DoFHandler<dim> &dof_handler_for_projection,
+                              const bool for_mg);
+        void output_visc (const unsigned int level, const unsigned int proc);
+        virtual void compute_diagonal ();
+
+        dealii::LinearAlgebra::distributed::Vector<double> compute_velocity_lumped_mass_matrix();
+
+      private:
+        virtual void apply_add (dealii::LinearAlgebra::distributed::Vector<number> &dst,
+                                const dealii::LinearAlgebra::distributed::Vector<number> &src) const;
+
+        void local_apply (const dealii::MatrixFree<dim, number> &data,
+                          dealii::LinearAlgebra::distributed::Vector<number> &dst,
+                          const dealii::LinearAlgebra::distributed::Vector<number> &src,
+                          const std::pair<unsigned int, unsigned int> &cell_range) const;
+
+        void local_compute_diagonal (const MatrixFree<dim,number>                     &data,
+                                     dealii::LinearAlgebra::distributed::Vector<number>  &dst,
+                                     const unsigned int                               &dummy,
+                                     const std::pair<unsigned int,unsigned int>       &cell_range) const;
+
+        void local_compute_lumped (const MatrixFree<dim,number>                     &data,
+                                   dealii::LinearAlgebra::distributed::Vector<number>  &dst,
+                                   const unsigned int                               &dummy,
+                                   const std::pair<unsigned int,unsigned int>       &cell_range) const;
 
         Table<2, VectorizedArray<number> > viscosity_x_2;
     };
@@ -622,6 +826,67 @@ namespace aspect
           velocity.distribute_local_to_global (dst);
         }
     }
+
+
+    template <int dim, int degree_v, typename number>
+    dealii::LinearAlgebra::distributed::Vector<double>
+    ABlockOperator<dim,degree_v,number>
+    ::compute_velocity_lumped_mass_matrix()
+    {
+      dealii::LinearAlgebra::distributed::Vector<number> diag;
+      this->data->initialize_dof_vector(diag);
+      unsigned int dummy = 0;
+      this->data->cell_loop (&ABlockOperator::local_compute_lumped, this,
+                             diag, dummy);
+
+      this->set_constrained_entries_to_one(diag);
+
+      for (unsigned int i=0; i<diag.local_size(); ++i)
+        {
+          Assert(diag.local_element(i) > 0.,
+                 ExcMessage("No diagonal entry in a positive definite operator "
+                            "should be zero"));
+          diag.local_element(i) =
+            1./diag.local_element(i);
+        }
+
+      return diag;
+    }
+    template <int dim, int degree_v, typename number>
+    void
+    ABlockOperator<dim,degree_v,number>
+    ::local_compute_lumped (const MatrixFree<dim,number>                     &data,
+                            dealii::LinearAlgebra::distributed::Vector<number>  &dst,
+                            const unsigned int &,
+                            const std::pair<unsigned int,unsigned int>       &cell_range) const
+    {
+      FEEvaluation<dim,degree_v,degree_v+1,dim,number> velocity (data, 0);
+      for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+        {
+          velocity.reinit (cell);
+          AlignedVector<VectorizedArray<number> > diagonal(velocity.dofs_per_cell);
+          for (unsigned int i=0; i<velocity.dofs_per_cell; ++i)
+            {
+              for (unsigned int j=0; j<velocity.dofs_per_cell; ++j)
+                velocity.begin_dof_values()[j] = VectorizedArray<number>();
+              velocity.begin_dof_values()[i] = make_vectorized_array<number> (1.);
+
+              velocity.evaluate (true,false,false);
+              for (unsigned int q=0; q<velocity.n_q_points; ++q)
+                {
+                  velocity.submit_value
+                  ((sqrt((viscosity_x_2(cell,q)/2.0)))*velocity.get_value(q),q);
+                }
+              velocity.integrate (true,false);
+
+              diagonal[i] = velocity.begin_dof_values()[i];
+            }
+
+          for (unsigned int i=0; i<velocity.dofs_per_cell; ++i)
+            velocity.begin_dof_values()[i] = diagonal[i];
+          velocity.distribute_local_to_global (dst);
+        }
+    }
   }
 
 
@@ -655,9 +920,7 @@ namespace aspect
       void setup_dofs();
 
       void assemble_coarse_matrix();
-
-      std::unique_ptr<MGCoarseGridBase<dealii::LinearAlgebra::distributed::Vector<double>>>
-      create_coarse_solver();
+      void assemble_lumped_mass_matrix();
 
       /**
              * Evalute the MaterialModel to query for the viscosity on the active cells
@@ -693,6 +956,9 @@ namespace aspect
       DoFHandler<dim> dof_handler_p;
       DoFHandler<dim> dof_handler_projection;
 
+      ConstraintMatrix constraints_v;
+      ConstraintMatrix constraints_p;
+
 
     private:
       /**
@@ -704,6 +970,7 @@ namespace aspect
       // TODO: velocity degree not only 2, Choosing quadrature degree?
       typedef MatrixFreeStokesOperators::StokesOperator<dim,2,double> StokesMatrixType;
       typedef MatrixFreeStokesOperators::MassMatrixOperator<dim,1,double> MassMatrixType;
+      typedef MatrixFreeStokesOperators::PressurePoissonOperator<dim,1,double> PoissonMatrixType;
       typedef MatrixFreeStokesOperators::ABlockOperator<dim,2,double> ABlockMatrixType;
 
 
@@ -715,23 +982,25 @@ namespace aspect
       StokesMatrixType stokes_matrix;
       ABlockMatrixType velocity_matrix;
       MassMatrixType mass_matrix;
+      PoissonMatrixType poisson_matrix;
 
       LinearAlgebra::SparseMatrix coarse_matrix_amg;
+      dealii::LinearAlgebra::distributed::Vector<double>  velocity_lumped_mass_matrix;
 
-      ConstraintMatrix stokes_constraints;
-      ConstraintMatrix constraints_v;
-      ConstraintMatrix constraints_p;
-      ConstraintMatrix constraints_projection;
 
-      MGLevelObject<ABlockMatrixType> mg_matrices;
-      MGConstrainedDoFs              mg_constrained_dofs;
-      MGConstrainedDoFs mg_constrained_dofs_projection;
+
+      MGLevelObject<ABlockMatrixType> mg_velocity_matrices;
+      MGConstrainedDoFs              mg_velocity_constrained_dofs;
+
+      MGLevelObject<PoissonMatrixType> mg_pressure_matrices;
+      MGConstrainedDoFs              mg_pressure_constrained_dofs;
 
       dealii::LinearAlgebra::distributed::Vector<double> active_coef_dof_vec;
       MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_coef_dof_vec;
 
 
-      MGTransferMatrixFree<dim,double> mg_transfer;
+      MGTransferMatrixFree<dim,double> mg_velocity_transfer;
+      MGTransferMatrixFree<dim,double> mg_pressure_transfer;
 
       //friend class Simulator<dim>;
       //friend class SimulatorAccess<dim>;
