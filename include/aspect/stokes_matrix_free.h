@@ -782,7 +782,6 @@ namespace aspect
       StokesMatrixType stokes_matrix;
       ABlockMatrixType velocity_matrix;
       MassMatrixType mass_matrix;
-      PoissonMatrixType poisson_matrix;
 
       LinearAlgebra::SparseMatrix coarse_matrix_amg;
       dealii::LinearAlgebra::distributed::Vector<double>  velocity_lumped_mass_matrix;
