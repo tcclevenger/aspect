@@ -326,34 +326,34 @@ namespace aspect
   }
 
 
-  template <int dim>
-  bool SimulatorAccess<dim>::using_stokes_matrix_free () const
-  {
-    if (simulator->parameters.stokes_solver_type == Parameters<dim>::StokesSolverType::block_gmg)
-      return true;
-    return false;
-  }
+//  template <int dim>
+//  bool SimulatorAccess<dim>::using_stokes_matrix_free () const
+//  {
+//    if (simulator->parameters.stokes_solver_type == Parameters<dim>::StokesSolverType::block_gmg)
+//      return true;
+//    return false;
+//  }
 
-  template <int dim>
-  const DoFHandler<dim> &
-  SimulatorAccess<dim>::get_velocity_dof_handler () const
-  {
-    return simulator->stokes_matrix_free->dof_handler_v;
-  }
+//  template <int dim>
+//  const DoFHandler<dim> &
+//  SimulatorAccess<dim>::get_velocity_dof_handler () const
+//  {
+//    return simulator->stokes_matrix_free->dof_handler_v;
+//  }
 
-  template <int dim>
-  const DoFHandler<dim> &
-  SimulatorAccess<dim>::get_pressure_dof_handler () const
-  {
-    return simulator->stokes_matrix_free->dof_handler_p;
-  }
+//  template <int dim>
+//  const DoFHandler<dim> &
+//  SimulatorAccess<dim>::get_pressure_dof_handler () const
+//  {
+//    return simulator->stokes_matrix_free->dof_handler_p;
+//  }
 
-  template <int dim>
-  const DoFHandler<dim> &
-  SimulatorAccess<dim>::get_proj_dof_handler () const
-  {
-    return simulator->stokes_matrix_free->dof_handler_projection;
-  }
+//  template <int dim>
+//  const DoFHandler<dim> &
+//  SimulatorAccess<dim>::get_proj_dof_handler () const
+//  {
+//    return simulator->stokes_matrix_free->dof_handler_projection;
+//  }
 
 
 
