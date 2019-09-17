@@ -352,6 +352,10 @@ namespace aspect
                            "complement solver is used. The direct solver is only efficient "
                            "for small problems.");
 
+        prm.declare_entry ("Use block diagonal preconditioner", "false",
+                           Patterns::Bool(),
+                           "");
+
         prm.declare_entry ("Linear solver tolerance", "1e-7",
                            Patterns::Double(0,1),
                            "A relative tolerance up to which the linear Stokes systems in each "
@@ -1282,6 +1286,8 @@ namespace aspect
         if (prm.get_bool("Use direct solver for Stokes system"))
           stokes_solver_type = StokesSolverType::direct_solver;
         use_direct_stokes_solver        = stokes_solver_type==StokesSolverType::direct_solver;
+
+        use_block_diagonal_preconditioner  = prm.get_bool ("Use block diagonal preconditioner");
 
         linear_stokes_solver_tolerance  = prm.get_double ("Linear solver tolerance");
         n_cheap_stokes_solver_steps     = prm.get_integer ("Number of cheap Stokes solver steps");
