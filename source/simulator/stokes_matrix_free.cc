@@ -1863,7 +1863,7 @@ namespace aspect
     const unsigned int n_matvec = 100;
     const unsigned int n_prec = 10;
 
-    LA::MPI::BlockVector tmp1, tmp2;
+    LinearAlgebra::BlockVector tmp1, tmp2;
     tmp1.reinit(sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
     tmp2.reinit(sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
     tmp1 = system_rhs;
