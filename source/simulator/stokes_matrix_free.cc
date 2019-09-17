@@ -37,6 +37,13 @@
 #include <deal.II/lac/read_write_vector.templates.h>
 
 
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_minres.h>
+#include <deal.II/lac/solver_bicgstab.h>
+#include <deal.II/lac/solver_qmrs.h>
+
+
 
 namespace aspect
 {
@@ -1517,6 +1524,464 @@ namespace aspect
     return std::pair<double,double>(initial_nonlinear_residual,
                                     final_linear_residual);
   }
+
+
+
+  template <int dim>
+  std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
+  {
+    double initial_nonlinear_residual = numbers::signaling_nan<double>();
+    double final_linear_residual      = numbers::signaling_nan<double>();
+
+    // Below we define all the objects needed to build the GMG preconditioner:
+    using vector_t = dealii::LinearAlgebra::distributed::Vector<double>;
+
+    // We choose a Chebyshev smoother, degree 4
+    typedef PreconditionChebyshev<ABlockMatrixType,vector_t> SmootherType;
+    mg::SmootherRelaxation<SmootherType, vector_t>
+    mg_smoother;
+    {
+      MGLevelObject<typename SmootherType::AdditionalData> smoother_data;
+      smoother_data.resize(0, sim.triangulation.n_global_levels()-1);
+      for (unsigned int level = 0; level<sim.triangulation.n_global_levels(); ++level)
+        {
+          if (level > 0)
+            {
+              smoother_data[level].smoothing_range = 15.;
+              smoother_data[level].degree = 4;
+              smoother_data[level].eig_cg_n_iterations = 10;
+            }
+          else
+            {
+              smoother_data[0].smoothing_range = 1e-3;
+              smoother_data[0].degree = numbers::invalid_unsigned_int;
+              smoother_data[0].eig_cg_n_iterations = mg_matrices[0].m();
+            }
+          smoother_data[level].preconditioner = mg_matrices[level].get_matrix_diagonal_inverse();
+        }
+      mg_smoother.initialize(mg_matrices, smoother_data);
+    }
+
+    // Coarse Solver is just an application of the Chebyshev smoother setup
+    // in such a way to be a solver
+    MGCoarseGridApplySmoother<vector_t> mg_coarse;
+    mg_coarse.initialize(mg_smoother);
+
+    // Interface matrices
+    MGLevelObject<MatrixFreeOperators::MGInterfaceOperator<ABlockMatrixType> > mg_interface_matrices;
+    mg_interface_matrices.resize(0, sim.triangulation.n_global_levels()-1);
+    for (unsigned int level=0; level<sim.triangulation.n_global_levels(); ++level)
+      mg_interface_matrices[level].initialize(mg_matrices[level]);
+    mg::Matrix<vector_t > mg_interface(mg_interface_matrices);
+
+    // MG Matrix
+    mg::Matrix<vector_t > mg_matrix(mg_matrices);
+
+    // MG object
+    Multigrid<vector_t > mg(mg_matrix,
+                            mg_coarse,
+                            mg_transfer,
+                            mg_smoother,
+                            mg_smoother);
+    mg.set_edge_matrices(mg_interface, mg_interface);
+
+    // GMG Preconditioner
+    typedef PreconditionMG<dim, vector_t, MGTransferMatrixFree<dim,double> > APreconditioner;
+    APreconditioner prec_A(dof_handler_v, mg, mg_transfer);
+
+    // For the Mass matrix Preconditioner we choose a Chebyshev smoother setup
+    // in a similar way to the coarse grid solver.
+    typedef PreconditionChebyshev<MassMatrixType,vector_t> MassPreconditioner;
+    MassPreconditioner prec_S;
+    typename MassPreconditioner::AdditionalData prec_S_data;
+    prec_S_data.smoothing_range = 1e-3;
+    prec_S_data.degree = numbers::invalid_unsigned_int;
+    prec_S_data.eig_cg_n_iterations = mass_matrix.m();
+    prec_S_data.preconditioner = mass_matrix.get_matrix_diagonal_inverse();
+    prec_S.initialize(mass_matrix,prec_S_data);
+
+
+    // Many parts of the solver depend on the block layout (velocity = 0,
+    // pressure = 1). For example the linearized_stokes_initial_guess vector or the StokesBlock matrix
+    // wrapper. Let us make sure that this holds (and shorten their names):
+    const unsigned int block_vel = sim.introspection.block_indices.velocities;
+    const unsigned int block_p = (sim.parameters.include_melt_transport) ?
+                                 sim.introspection.variable("fluid pressure").block_index
+                                 : sim.introspection.block_indices.pressure;
+
+    LinearAlgebra::BlockVector distributed_stokes_solution (sim.introspection.index_sets.stokes_partitioning,
+                                                            sim.mpi_communicator);
+    // extract Stokes parts of rhs vector
+    LinearAlgebra::BlockVector distributed_stokes_rhs(sim.introspection.index_sets.stokes_partitioning,
+                                                      sim.mpi_communicator);
+
+    distributed_stokes_rhs.block(block_vel) = sim.system_rhs.block(block_vel);
+    distributed_stokes_rhs.block(block_p) = sim.system_rhs.block(block_p);
+
+    Assert(block_vel == 0, ExcNotImplemented());
+    Assert(block_p == 1, ExcNotImplemented());
+    Assert(!sim.parameters.include_melt_transport
+           || sim.introspection.variable("compaction pressure").block_index == 1, ExcNotImplemented());
+
+    // create a completely distributed vector that will be used for
+    // the scaled and denormalized solution and later used as a
+    // starting guess for the linear solver
+    LinearAlgebra::BlockVector linearized_stokes_initial_guess (sim.introspection.index_sets.stokes_partitioning,
+                                                                sim.mpi_communicator);
+
+    // copy the velocity and pressure from current_linearization_point into
+    // the vector linearized_stokes_initial_guess. We need to do the copy because
+    // linearized_stokes_variables has a different
+    // layout than current_linearization_point, which also contains all the
+    // other solution variables.
+    if (sim.assemble_newton_stokes_system == false)
+      {
+        linearized_stokes_initial_guess.block (block_vel) = sim.current_linearization_point.block (block_vel);
+        linearized_stokes_initial_guess.block (block_p) = sim.current_linearization_point.block (block_p);
+
+        sim.denormalize_pressure (sim.last_pressure_normalization_adjustment,
+                                  linearized_stokes_initial_guess,
+                                  sim.current_linearization_point);
+      }
+    else
+      {
+        // The Newton solver solves for updates to variables, for which our best guess is zero when
+        // the it isn't the first nonlinear iteration. When it is the first nonlinear iteration, we
+        // have to assemble the full (non-defect correction) Picard, to get the boundary conditions
+        // right in combination with being able to use the initial guess optimally. So we may never
+        // end up here when it is the first nonlinear iteration.
+        Assert(sim.nonlinear_iteration != 0,
+               ExcMessage ("The Newton solver may not be active in the first nonlinear iteration"));
+
+        linearized_stokes_initial_guess.block (block_vel) = 0;
+        linearized_stokes_initial_guess.block (block_p) = 0;
+      }
+
+    sim.current_constraints.set_zero (linearized_stokes_initial_guess);
+    linearized_stokes_initial_guess.block (block_p) /= sim.pressure_scaling;
+
+    double solver_tolerance = 0;
+    if (sim.assemble_newton_stokes_system == false)
+      {
+        // (ab)use the distributed solution vector to temporarily put a residual in
+        // (we don't care about the residual vector -- all we care about is the
+        // value (number) of the initial residual). The initial residual is returned
+        // to the caller (for nonlinear computations). This value is computed before
+        // the solve because we want to compute || A^{k+1} U^k - F^{k+1} ||, which is
+        // the nonlinear residual. Because the place where the nonlinear residual is
+        // checked against the nonlinear tolerance comes after the solve, the system
+        // is solved one time too many in the case of a nonlinear Picard solver.
+
+        // We must copy between Trilinos/dealii vector types
+        dealii::LinearAlgebra::distributed::BlockVector<double> solution_copy(2);
+        dealii::LinearAlgebra::distributed::BlockVector<double> initial_copy(2);
+        dealii::LinearAlgebra::distributed::BlockVector<double> rhs_copy(2);
+
+        stokes_matrix.initialize_dof_vector(solution_copy);
+        stokes_matrix.initialize_dof_vector(initial_copy);
+        stokes_matrix.initialize_dof_vector(rhs_copy);
+
+        solution_copy.collect_sizes();
+        initial_copy.collect_sizes();
+        rhs_copy.collect_sizes();
+
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+        internal::ChangeVectorTypes::copy(initial_copy,linearized_stokes_initial_guess);
+        internal::ChangeVectorTypes::copy(rhs_copy,distributed_stokes_rhs);
+
+        // Compute residual l2_norm
+        stokes_matrix.vmult(solution_copy,initial_copy);
+        solution_copy.sadd(-1,1,rhs_copy);
+        initial_nonlinear_residual = solution_copy.l2_norm();
+
+        // Note: the residual is computed with a zero velocity, effectively computing
+        // || B^T p - g ||, which we are going to use for our solver tolerance.
+        // We do not use the current velocity for the initial residual because
+        // this would not decrease the number of iterations if we had a better
+        // initial guess (say using a smaller timestep). But we need to use
+        // the pressure instead of only using the norm of the rhs, because we
+        // are only interested in the part of the rhs not balanced by the static
+        // pressure (the current pressure is a good approximation for the static
+        // pressure).
+        initial_copy.block(0) = 0.;
+        stokes_matrix.vmult(solution_copy,initial_copy);
+        solution_copy.block(0).sadd(-1,1,rhs_copy.block(0));
+
+        const double residual_u = solution_copy.block(0).l2_norm();
+
+        const double residual_p = rhs_copy.block(1).l2_norm();
+
+        solver_tolerance = sim.parameters.linear_stokes_solver_tolerance *
+                           std::sqrt(residual_u*residual_u+residual_p*residual_p);
+      }
+    else
+      {
+        // if we are solving for the Newton update, then the initial guess of the solution
+        // vector is the zero vector, and the starting (nonlinear) residual is simply
+        // the norm of the (Newton) right hand side vector
+        const double residual_u = distributed_stokes_rhs.block(0).l2_norm();
+        const double residual_p = distributed_stokes_rhs.block(1).l2_norm();
+        solver_tolerance = sim.parameters.linear_stokes_solver_tolerance *
+                           std::sqrt(residual_u*residual_u+residual_p*residual_p);
+
+        // as described in the documentation of the function, the initial
+        // nonlinear residual for the Newton method is computed by just
+        // taking the norm of the right hand side
+        initial_nonlinear_residual = std::sqrt(residual_u*residual_u+residual_p*residual_p);
+      }
+
+    // Now overwrite the solution vector again with the current best guess
+    // to solve the linear system
+    distributed_stokes_solution = linearized_stokes_initial_guess;
+
+    // Again, copy solution and rhs vectors to solve with matrix-free operators
+    dealii::LinearAlgebra::distributed::BlockVector<double> solution_copy(2);
+    dealii::LinearAlgebra::distributed::BlockVector<double> rhs_copy(2);
+
+    stokes_matrix.initialize_dof_vector(solution_copy);
+    stokes_matrix.initialize_dof_vector(rhs_copy);
+
+    solution_copy.collect_sizes();
+    rhs_copy.collect_sizes();
+
+    internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+    internal::ChangeVectorTypes::copy(rhs_copy,distributed_stokes_rhs);
+
+    // create Solver controls for the cheap and expensive solver phase
+    SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                        solver_tolerance, true);
+    SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                            solver_tolerance);
+
+    solver_control_cheap.enable_history_data();
+    solver_control_expensive.enable_history_data();
+
+    // create a cheap preconditioner that consists of only a single V-cycle
+    const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+    preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                          prec_S, prec_A,
+                          false,
+                          sim.parameters.linear_solver_A_block_tolerance,
+                          sim.parameters.linear_solver_S_block_tolerance);
+
+    // create an expensive preconditioner that solves for the A block with CG
+    const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+    preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
+                              prec_S, prec_A,
+                              true,
+                              sim.parameters.linear_solver_A_block_tolerance,
+                              sim.parameters.linear_solver_S_block_tolerance);
+
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+
+    // step 1a: try if the simple and fast solver
+    // succeeds in n_cheap_stokes_solver_steps steps or less.
+    Timer timer(mpi_communicator,true);
+    unsigned int minres_m = 0.0;
+    unsigned int fgmres_m = 0.0;
+    unsigned int bicgstab_m = 0.0;
+    try
+      {
+        SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
+        solver(solver_control_cheap, mem,
+               SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+               AdditionalData(sim.parameters.stokes_gmres_restart_length));
+
+        timer.restart();
+        solver.solve (stokes_matrix,
+                      solution_copy,
+                      rhs_copy,
+                      preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        fgmres_m = solver_control.last_step();
+        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+
+        final_linear_residual = solver_control_cheap.last_value();
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "FGMRES DID NOT CONVERGE AFTER "
+                  << solver_control.last_step()
+                  << " ITERATIONS. res=" << solver_control.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
+
+    try
+      {
+        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control);
+
+        solution_copy = 0;
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        minres_m = solver_control.last_step();
+        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "MINRES DID NOT CONVERGE AFTER "
+                  << solver_control.last_step()
+                  << " ITERATIONS. res=" << solver_control.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
+
+    try
+      {
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control);
+
+        solution_copy = 0;
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        bicgstab_m = solver_control.last_step();
+        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "BiCGStab DID NOT CONVERGE AFTER "
+                  << solver_control.last_step()
+                  << " ITERATIONS. res=" << solver_control.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
+
+    const unsigned int n_scalar = 1000;
+    const unsigned int n_matvec = 100;
+    const unsigned int n_prec = 10;
+
+    LA::MPI::BlockVector tmp1, tmp2;
+    tmp1.reinit(owned_partitioning, mpi_communicator);
+    tmp2.reinit(owned_partitioning, mpi_communicator);
+    tmp1 = system_rhs;
+    tmp2 = system_rhs;
+
+    dealii::LinearAlgebra::distributed::BlockVector<double> tmp3(2);
+    dealii::LinearAlgebra::distributed::BlockVector<double> tmp4(2);
+    stokes_matrix.initialize_dof_vector(tmp3);
+    stokes_matrix.initialize_dof_vector(tmp4);
+    tmp3.collect_sizes();
+    tmp4.collect_sizes();
+    internal::ChangeVectorTypes::copy(tmp3,system_rhs);
+    internal::ChangeVectorTypes::copy(tmp4,system_rhs);
+
+    sim.pcout << std::endl;
+
+    double scalar_val;
+    timer.restart();
+    for (unsigned int i=0; i<n_scalar; ++i)
+      {
+        scalar_val += tmp1*tmp2;
+      }
+    timer.stop();
+    const double scalar_tril = timer.last_wall_time()/n_scalar;
+
+    sim.pcout << "Trilinos Scalar Product Timings: " << scalar_tril << std::endl;
+
+    timer.restart();
+    for (unsigned int i=0; i<n_scalar; ++i)
+      {
+        scalar_val += tmp3*tmp4;
+      }
+    timer.stop();
+    const double scalar_deal = timer.last_wall_time()/n_scalar;
+
+    sim.pcout << "deal.II Scalar Product Timings:  " << scalar_deal << std::endl;
+
+    timer.restart();
+    for (unsigned int i=0; i<n_matvec; ++i)
+      {
+        stokes_matrix.vmult(tmp3,tmp4);
+        tmp4 += tmp3;
+      }
+    timer.stop();
+    const double matvec = timer.last_wall_time()/n_matvec;
+
+    sim.pcout << "Matrix-vector Product Timings:   " << matvec << std::endl;
+
+    timer.restart();
+    for (unsigned int i=0; i<n_prec; ++i)
+      {
+        preconditioner_cheap.vmult(tmp3,tmp4);
+        tmp4 += tmp3;
+      }
+    timer.stop();
+    const double prec = timer.last_wall_time()/n_prec;
+
+    sim.pcout << "Preconditioner Vmult Timings:    " << prec << std::endl;
+
+    sim.pcout << std::endl;
+
+    const double minres_predict = 2*minres_m*scalar_deal
+                                  + (minres_m+1)*matvec
+                                  + (minres_m+1)*prec;
+    sim.pcout << "Minres Prediction Timings:         " << minres_predict << std::endl;
+
+    const double fgmres_predict = (1/2)*(fgmres_m+1)*(fgmres_m+2)*scalar_deal
+                                  + (fgmres_m)*matvec
+                                  + (fgmres_m)*prec;
+    sim.pcout << "FGMRES Prediction Timings:         " << fgmres_predict << std::endl;
+
+    const double bicgstab_predict = 6*bicgstab_m*scalar_deal
+                                    + 2*bicgstab_m*matvec
+                                    + 2*bicgstab_m*prec;
+    sim.pcout << "BiCGStab Prediction Timings:       " << bicgstab_predict << std::endl;
+
+
+
+
+    //signal successful solver
+    sim.signals.post_stokes_solver(sim,
+                                   preconditioner_cheap.n_iterations_S() + preconditioner_expensive.n_iterations_S(),
+                                   preconditioner_cheap.n_iterations_A() + preconditioner_expensive.n_iterations_A(),
+                                   solver_control_cheap,
+                                   solver_control_expensive);
+
+    // distribute hanging node and other constraints
+    solution_copy.update_ghost_values();
+    internal::ChangeVectorTypes::copy(distributed_stokes_solution,solution_copy);
+
+    sim.current_constraints.distribute (distributed_stokes_solution);
+
+    // now rescale the pressure back to real physical units
+    distributed_stokes_solution.block(block_p) *= sim.pressure_scaling;
+
+    // then copy back the solution from the temporary (non-ghosted) vector
+    // into the ghosted one with all solution components
+    sim.solution.block(block_vel) = distributed_stokes_solution.block(block_vel);
+    sim.solution.block(block_p) = distributed_stokes_solution.block(block_p);
+
+    // do some cleanup now that we have the solution
+    sim.remove_nullspace(sim.solution, distributed_stokes_solution);
+    if (sim.assemble_newton_stokes_system == false)
+      sim.last_pressure_normalization_adjustment = sim.normalize_pressure(sim.solution);
+
+
+    // convert melt pressures
+    // TODO: We assert in the StokesMatrixFreeHandler constructor that we
+    //       are not including melt transport.
+    if (sim.parameters.include_melt_transport)
+      sim.melt_handler->compute_melt_variables(sim.solution);
+
+    return std::pair<double,double>(initial_nonlinear_residual,
+                                    final_linear_residual);
+  }
+
+
+
 
 
   template <int dim>

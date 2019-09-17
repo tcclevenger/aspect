@@ -300,6 +300,8 @@ namespace aspect
        */
       std::pair<double,double> solve();
 
+      std::pair<double,double> krylov_solve();
+
       /**
        * Allocates and sets up the members of the StokesMatrixFreeHandler. This
        * is called by Simulator<dim>::setup_dofs()

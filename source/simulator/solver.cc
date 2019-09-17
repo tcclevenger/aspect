@@ -530,7 +530,8 @@ namespace aspect
 
     if (parameters.stokes_solver_type == Parameters<dim>::StokesSolverType::block_gmg)
       {
-        return stokes_matrix_free->solve();
+        //return stokes_matrix_free->solve();
+        return stokes_matrix_free->krylov_solve();
       }
 
     // extract Stokes parts of solution vector, without any ghost elements
