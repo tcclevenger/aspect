@@ -1866,8 +1866,8 @@ namespace aspect
     LinearAlgebra::BlockVector tmp1, tmp2;
     tmp1.reinit(sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
     tmp2.reinit(sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
-    tmp1 = system_rhs;
-    tmp2 = system_rhs;
+    tmp1 = distributed_stokes_rhs;
+    tmp2 = distributed_stokes_rhs;
 
     dealii::LinearAlgebra::distributed::BlockVector<double> tmp3(2);
     dealii::LinearAlgebra::distributed::BlockVector<double> tmp4(2);
