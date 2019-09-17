@@ -1875,8 +1875,8 @@ namespace aspect
     stokes_matrix.initialize_dof_vector(tmp4);
     tmp3.collect_sizes();
     tmp4.collect_sizes();
-    internal::ChangeVectorTypes::copy(tmp3,system_rhs);
-    internal::ChangeVectorTypes::copy(tmp4,system_rhs);
+    internal::ChangeVectorTypes::copy(tmp3,distributed_stokes_rhs);
+    internal::ChangeVectorTypes::copy(tmp4,distributed_stokes_rhs);
 
     sim.pcout << std::endl;
 
