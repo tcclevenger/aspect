@@ -215,8 +215,7 @@ namespace aspect
                                      const PreconditionerA                      &Apreconditioner,
                                      const bool                                  do_solve_A,
                                      const double                                A_block_tolerance,
-                                     const double                                S_block_tolerance,
-                                     const bool use_block_diag_prec = false);
+                                     const double                                S_block_tolerance);
 
         /**
          * Matrix vector product with this preconditioner object.
@@ -247,8 +246,6 @@ namespace aspect
         mutable unsigned int n_iterations_S_;
         const double A_block_tolerance;
         const double S_block_tolerance;
-
-        const bool use_block_diagonal_preconditioner;
     };
 
     template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, class PreconditionerMp,class PreconditionerA>
@@ -260,8 +257,7 @@ namespace aspect
                                  const PreconditionerA                      &Apreconditioner,
                                  const bool                                  do_solve_A,
                                  const double                                A_block_tolerance,
-                                 const double                                S_block_tolerance,
-                                 const bool use_block_diag_prec)
+                                 const double                                S_block_tolerance)
       :
       stokes_matrix     (S),
       velocity_matrix   (A),
@@ -272,8 +268,7 @@ namespace aspect
       n_iterations_A_(0),
       n_iterations_S_(0),
       A_block_tolerance(A_block_tolerance),
-      S_block_tolerance(S_block_tolerance),
-      use_block_diagonal_preconditioner(use_block_diag_prec)
+      S_block_tolerance(S_block_tolerance)
     {}
 
     template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, class PreconditionerMp,class PreconditionerA>
@@ -339,18 +334,16 @@ namespace aspect
                     throw QuietException();
               }
           }
-        if (use_block_diagonal_preconditioner == false)
-          dst.block(1) *= -1.0;
+        dst.block(1) *= -1.0;
       }
 
-      if (use_block_diagonal_preconditioner == false)
-        {
-          dealii::LinearAlgebra::distributed::BlockVector<double>  dst_tmp(dst);
-          dst_tmp.block(0) = 0.0;
-          stokes_matrix.vmult(utmp, dst_tmp); // B^T
-          utmp.block(0) *= -1.0;
-          utmp.block(0) += src.block(0);
-        }
+      {
+        dealii::LinearAlgebra::distributed::BlockVector<double>  dst_tmp(dst);
+        dst_tmp.block(0) = 0.0;
+        stokes_matrix.vmult(utmp, dst_tmp); // B^T
+        utmp.block(0) *= -1.0;
+        utmp.block(0) += src.block(0);
+      }
 
       // now either solve with the top left block (if do_solve_A==true)
       // or just apply one preconditioner sweep (for the first few
@@ -1769,8 +1762,7 @@ namespace aspect
                           prec_S, prec_A,
                           false,
                           sim.parameters.linear_solver_A_block_tolerance,
-                          sim.parameters.linear_solver_S_block_tolerance,
-                          sim.parameters.use_block_diagonal_preconditioner);
+                          sim.parameters.linear_solver_S_block_tolerance);
 
     // create an expensive preconditioner that solves for the A block with CG
     const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
@@ -1817,6 +1809,7 @@ namespace aspect
                   << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
+
     try
       {
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
@@ -1841,6 +1834,7 @@ namespace aspect
                   << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
+
     if (sim.parameters.use_block_diagonal_preconditioner)
       {
         try
