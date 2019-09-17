@@ -1776,7 +1776,7 @@ namespace aspect
 
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
-    Timer timer(mpi_communicator,true);
+    Timer timer(sim.mpi_communicator,true);
     unsigned int minres_m = 0.0;
     unsigned int fgmres_m = 0.0;
     unsigned int bicgstab_m = 0.0;
@@ -1811,7 +1811,7 @@ namespace aspect
 
     try
       {
-        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control);
+        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
         solution_copy = 0;
         timer.restart();
@@ -1836,7 +1836,7 @@ namespace aspect
 
     try
       {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
         solution_copy = 0;
         timer.restart();
@@ -1864,8 +1864,8 @@ namespace aspect
     const unsigned int n_prec = 10;
 
     LA::MPI::BlockVector tmp1, tmp2;
-    tmp1.reinit(owned_partitioning, mpi_communicator);
-    tmp2.reinit(owned_partitioning, mpi_communicator);
+    tmp1.reinit(sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
+    tmp2.reinit(sim.introspection.index_sets.stokes_partitioning, sim.mpi_communicator);
     tmp1 = system_rhs;
     tmp2 = system_rhs;
 
