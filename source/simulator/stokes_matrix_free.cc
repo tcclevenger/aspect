@@ -1817,7 +1817,30 @@ namespace aspect
                   << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
+    try
+      {
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
+        solution_copy = 0;
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        bicgstab_m = solver_control_cheap.last_step();
+        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "BiCGStab DID NOT CONVERGE AFTER "
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
     if (sim.parameters.use_block_diagonal_preconditioner)
       {
         try
@@ -1844,31 +1867,6 @@ namespace aspect
                       << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                       << "********************************************************************" << std::endl;
           }
-      }
-
-    try
-      {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
-
-        solution_copy = 0;
-        timer.restart();
-        solver.solve(stokes_matrix,
-                     solution_copy,
-                     rhs_copy,
-                     preconditioner_cheap);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control_cheap.last_step();
-        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "BiCGStab DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
       }
 
     const unsigned int n_scalar = 1000;
@@ -1938,14 +1936,6 @@ namespace aspect
 
     sim.pcout << std::endl;
 
-    if (sim.parameters.use_block_diagonal_preconditioner)
-      {
-        const double minres_predict = 2*minres_m*scalar_deal
-                                      + (minres_m+1)*matvec
-                                      + (minres_m+1)*prec;
-        sim.pcout << "Minres Prediction Timings:         " << minres_predict << std::endl;
-      }
-
     const double fgmres_predict = (1/2)*(fgmres_m+1)*(fgmres_m+2)*scalar_deal
                                   + (fgmres_m)*matvec
                                   + (fgmres_m)*prec;
@@ -1955,6 +1945,14 @@ namespace aspect
                                     + 2*bicgstab_m*matvec
                                     + 2*bicgstab_m*prec;
     sim.pcout << "BiCGStab Prediction Timings:       " << bicgstab_predict << std::endl;
+
+    if (sim.parameters.use_block_diagonal_preconditioner)
+      {
+        const double minres_predict = 2*minres_m*scalar_deal
+                                      + (minres_m+1)*matvec
+                                      + (minres_m+1)*prec;
+        sim.pcout << "Minres Prediction Timings:         " << minres_predict << std::endl;
+      }
 
 
 
