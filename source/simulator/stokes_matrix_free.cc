@@ -1913,7 +1913,7 @@ namespace aspect
 
     sim.pcout << "Matrix-vector Product Timings:   " << matvec << std::endl;
 
-    tmp4 = 0;
+    internal::ChangeVectorTypes::copy(tmp4,distributed_stokes_solution);
     timer.restart();
     for (unsigned int i=0; i<n_prec; ++i)
       {
