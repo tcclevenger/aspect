@@ -1794,7 +1794,7 @@ namespace aspect
                       preconditioner_cheap);
         timer.stop();
         const double solve_time = timer.last_wall_time();
-        fgmres_m = solver_control.last_step();
+        fgmres_m = solver_control_cheap.last_step();
         sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
                   << std::endl;
 
@@ -1804,8 +1804,8 @@ namespace aspect
       {
         sim.pcout << "********************************************************************" << std::endl
                   << "FGMRES DID NOT CONVERGE AFTER "
-                  << solver_control.last_step()
-                  << " ITERATIONS. res=" << solver_control.last_value() << std::endl
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
 
@@ -1818,10 +1818,10 @@ namespace aspect
         solver.solve(stokes_matrix,
                      solution_copy,
                      rhs_copy,
-                     preconditioner);
+                     preconditioner_cheap);
         timer.stop();
         const double solve_time = timer.last_wall_time();
-        minres_m = solver_control.last_step();
+        minres_m = solver_control_cheap.last_step();
         sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
                   << std::endl;
       }
@@ -1829,8 +1829,8 @@ namespace aspect
       {
         sim.pcout << "********************************************************************" << std::endl
                   << "MINRES DID NOT CONVERGE AFTER "
-                  << solver_control.last_step()
-                  << " ITERATIONS. res=" << solver_control.last_value() << std::endl
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
 
@@ -1843,10 +1843,10 @@ namespace aspect
         solver.solve(stokes_matrix,
                      solution_copy,
                      rhs_copy,
-                     preconditioner);
+                     preconditioner_cheap);
         timer.stop();
         const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control.last_step();
+        bicgstab_m = solver_control_cheap.last_step();
         sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
                   << std::endl;
       }
@@ -1854,8 +1854,8 @@ namespace aspect
       {
         sim.pcout << "********************************************************************" << std::endl
                   << "BiCGStab DID NOT CONVERGE AFTER "
-                  << solver_control.last_step()
-                  << " ITERATIONS. res=" << solver_control.last_value() << std::endl
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
 
