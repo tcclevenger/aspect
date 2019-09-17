@@ -1772,6 +1772,7 @@ namespace aspect
                               sim.parameters.linear_solver_A_block_tolerance,
                               sim.parameters.linear_solver_S_block_tolerance);
 
+    sim.pcout << std::endl << std::endl;
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
     // step 1a: try if the simple and fast solver
@@ -1827,11 +1828,11 @@ namespace aspect
       }
     catch (SolverControl::NoConvergence)
       {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "MINRES DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
+//        sim.pcout << "********************************************************************" << std::endl
+//                  << "MINRES DID NOT CONVERGE AFTER "
+//                  << solver_control_cheap.last_step()
+//                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+//                  << "********************************************************************" << std::endl;
       }
 
     try
@@ -1852,11 +1853,11 @@ namespace aspect
       }
     catch (SolverControl::NoConvergence)
       {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "BiCGStab DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
+//        sim.pcout << "********************************************************************" << std::endl
+//                  << "BiCGStab DID NOT CONVERGE AFTER "
+//                  << solver_control_cheap.last_step()
+//                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+//                  << "********************************************************************" << std::endl;
       }
 
     const unsigned int n_scalar = 1000;
@@ -1912,7 +1913,7 @@ namespace aspect
 
     sim.pcout << "Matrix-vector Product Timings:   " << matvec << std::endl;
 
-    internal::ChangeVectorTypes::copy(tmp4,distributed_stokes_solution);
+    tmp4 = 0;
     timer.restart();
     for (unsigned int i=0; i<n_prec; ++i)
       {
