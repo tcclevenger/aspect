@@ -215,7 +215,8 @@ namespace aspect
                                      const PreconditionerA                      &Apreconditioner,
                                      const bool                                  do_solve_A,
                                      const double                                A_block_tolerance,
-                                     const double                                S_block_tolerance);
+                                     const double                                S_block_tolerance,
+                                     const bool use_block_diag_prec = false);
 
         /**
          * Matrix vector product with this preconditioner object.
@@ -246,6 +247,8 @@ namespace aspect
         mutable unsigned int n_iterations_S_;
         const double A_block_tolerance;
         const double S_block_tolerance;
+
+        const bool use_block_diagonal_preconditioner;
     };
 
     template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, class PreconditionerMp,class PreconditionerA>
@@ -257,7 +260,8 @@ namespace aspect
                                  const PreconditionerA                      &Apreconditioner,
                                  const bool                                  do_solve_A,
                                  const double                                A_block_tolerance,
-                                 const double                                S_block_tolerance)
+                                 const double                                S_block_tolerance,
+                                 const bool use_block_diag_prec)
       :
       stokes_matrix     (S),
       velocity_matrix   (A),
@@ -268,7 +272,8 @@ namespace aspect
       n_iterations_A_(0),
       n_iterations_S_(0),
       A_block_tolerance(A_block_tolerance),
-      S_block_tolerance(S_block_tolerance)
+      S_block_tolerance(S_block_tolerance),
+      use_block_diagonal_preconditioner(use_block_diag_prec)
     {}
 
     template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, class PreconditionerMp,class PreconditionerA>
@@ -334,16 +339,18 @@ namespace aspect
                     throw QuietException();
               }
           }
-        dst.block(1) *= -1.0;
+        if (use_block_diagonal_preconditioner == false)
+          dst.block(1) *= -1.0;
       }
 
-      {
-        dealii::LinearAlgebra::distributed::BlockVector<double>  dst_tmp(dst);
-        dst_tmp.block(0) = 0.0;
-        stokes_matrix.vmult(utmp, dst_tmp); // B^T
-        utmp.block(0) *= -1.0;
-        utmp.block(0) += src.block(0);
-      }
+      if (use_block_diagonal_preconditioner == false)
+        {
+          dealii::LinearAlgebra::distributed::BlockVector<double>  dst_tmp(dst);
+          dst_tmp.block(0) = 0.0;
+          stokes_matrix.vmult(utmp, dst_tmp); // B^T
+          utmp.block(0) *= -1.0;
+          utmp.block(0) += src.block(0);
+        }
 
       // now either solve with the top left block (if do_solve_A==true)
       // or just apply one preconditioner sweep (for the first few
@@ -1762,7 +1769,8 @@ namespace aspect
                           prec_S, prec_A,
                           false,
                           sim.parameters.linear_solver_A_block_tolerance,
-                          sim.parameters.linear_solver_S_block_tolerance);
+                          sim.parameters.linear_solver_S_block_tolerance,
+                          sim.parameters.use_block_diagonal_preconditioner);
 
     // create an expensive preconditioner that solves for the A block with CG
     const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
@@ -1770,7 +1778,8 @@ namespace aspect
                               prec_S, prec_A,
                               true,
                               sim.parameters.linear_solver_A_block_tolerance,
-                              sim.parameters.linear_solver_S_block_tolerance);
+                              sim.parameters.linear_solver_S_block_tolerance,
+                              sim.parameters.use_block_diagonal_preconditioner);
 
     sim.pcout << std::endl << std::endl;
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
@@ -1781,30 +1790,6 @@ namespace aspect
     unsigned int minres_m = 0.0;
     unsigned int fgmres_m = 0.0;
     unsigned int bicgstab_m = 0.0;
-    try
-      {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
-
-        solution_copy = 0;
-        timer.restart();
-        solver.solve(stokes_matrix,
-                     solution_copy,
-                     rhs_copy,
-                     preconditioner_cheap);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control_cheap.last_step();
-        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
-      }
-    catch (SolverControl::NoConvergence)
-      {
-//        sim.pcout << "********************************************************************" << std::endl
-//                  << "BiCGStab DID NOT CONVERGE AFTER "
-//                  << solver_control_cheap.last_step()
-//                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-//                  << "********************************************************************" << std::endl;
-      }
 
     try
       {
@@ -1837,7 +1822,11 @@ namespace aspect
 
     try
       {
-        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+        SolverControl solver_control_test (sim.parameters.n_cheap_stokes_solver_steps,
+                                           solver_tolerance, true);
+        solver_control_test.enable_history_data();
+
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_test);
 
         solution_copy = 0;
         timer.restart();
@@ -1847,17 +1836,46 @@ namespace aspect
                      preconditioner_cheap);
         timer.stop();
         const double solve_time = timer.last_wall_time();
-        minres_m = solver_control_cheap.last_step();
-        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+        bicgstab_m = solver_control_test.last_step();
+        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
                   << std::endl;
       }
     catch (SolverControl::NoConvergence)
       {
-//        sim.pcout << "********************************************************************" << std::endl
-//                  << "MINRES DID NOT CONVERGE AFTER "
-//                  << solver_control_cheap.last_step()
-//                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-//                  << "********************************************************************" << std::endl;
+        sim.pcout << "********************************************************************" << std::endl
+                  << "BiCGStab DID NOT CONVERGE AFTER "
+                  << solver_control_test.last_step()
+                  << " ITERATIONS. res=" << solver_control_test.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
+
+
+    if (sim.parameters.use_block_diagonal_preconditioner)
+      {
+        try
+          {
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_test);
+
+            solution_copy = 0;
+            timer.restart();
+            solver.solve(stokes_matrix,
+                         solution_copy,
+                         rhs_copy,
+                         preconditioner_cheap);
+            timer.stop();
+            const double solve_time = timer.last_wall_time();
+            minres_m = solver_control_test.last_step();
+            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+                      << std::endl;
+          }
+        catch (SolverControl::NoConvergence)
+          {
+            sim.pcout << "********************************************************************" << std::endl
+                      << "MINRES DID NOT CONVERGE AFTER "
+                      << solver_control_test.last_step()
+                      << " ITERATIONS. res=" << solver_control_test.last_value() << std::endl
+                      << "********************************************************************" << std::endl;
+          }
       }
 
 
