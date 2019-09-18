@@ -1763,6 +1763,13 @@ namespace aspect
     solver_control_cheap.enable_history_data();
     solver_control_expensive.enable_history_data();
 
+    SolverControl solver_control_bicgstab (sim.parameters.n_cheap_stokes_solver_steps,
+                                       solver_tolerance, true);
+    solver_control_bicgstab.enable_history_data();
+    SolverControl solver_control_minres (sim.parameters.n_cheap_stokes_solver_steps,
+                                       solver_tolerance, true);
+    solver_control_minres.enable_history_data();
+
     // create a cheap preconditioner that consists of only a single V-cycle
     const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
     preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
@@ -1822,11 +1829,7 @@ namespace aspect
 
     try
       {
-        SolverControl solver_control_test (sim.parameters.n_cheap_stokes_solver_steps,
-                                           solver_tolerance, true);
-        solver_control_test.enable_history_data();
-
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_test);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_bicgstab);
 
         solution_copy = 0;
         timer.restart();
@@ -1836,7 +1839,7 @@ namespace aspect
                      preconditioner_cheap);
         timer.stop();
         const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control_test.last_step();
+        bicgstab_m = solver_control_bicgstab.last_step();
         sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
                   << std::endl;
       }
@@ -1844,8 +1847,8 @@ namespace aspect
       {
         sim.pcout << "********************************************************************" << std::endl
                   << "BiCGStab DID NOT CONVERGE AFTER "
-                  << solver_control_test.last_step()
-                  << " ITERATIONS. res=" << solver_control_test.last_value() << std::endl
+                  << solver_control_bicgstab.last_step()
+                  << " ITERATIONS. res=" << solver_control_bicgstab.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
 
@@ -1854,7 +1857,7 @@ namespace aspect
       {
         try
           {
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_test);
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_minres);
 
             solution_copy = 0;
             timer.restart();
@@ -1864,7 +1867,7 @@ namespace aspect
                          preconditioner_cheap);
             timer.stop();
             const double solve_time = timer.last_wall_time();
-            minres_m = solver_control_test.last_step();
+            minres_m = solver_control_minres.last_step();
             sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
                       << std::endl;
           }
@@ -1872,8 +1875,8 @@ namespace aspect
           {
             sim.pcout << "********************************************************************" << std::endl
                       << "MINRES DID NOT CONVERGE AFTER "
-                      << solver_control_test.last_step()
-                      << " ITERATIONS. res=" << solver_control_test.last_value() << std::endl
+                      << solver_control_minres.last_step()
+                      << " ITERATIONS. res=" << solver_control_minres.last_value() << std::endl
                       << "********************************************************************" << std::endl;
           }
       }
