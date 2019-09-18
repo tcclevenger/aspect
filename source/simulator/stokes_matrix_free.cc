@@ -1803,6 +1803,7 @@ namespace aspect
         dealii::LinearAlgebra::distributed::BlockVector<double> tmp(2);
         stokes_matrix.initialize_dof_vector(tmp);
         tmp.collect_sizes();
+        internal::ChangeVectorTypes::copy(tmp,distributed_stokes_solution);
         stokes_matrix.vmult(tmp,rhs_copy);
         sim.pcout << "   FGMRES: " << tmp.l2_norm() << std::endl;
 
@@ -1895,6 +1896,8 @@ namespace aspect
         dealii::LinearAlgebra::distributed::BlockVector<double> tmp(2);
         stokes_matrix.initialize_dof_vector(tmp);
         tmp.collect_sizes();
+        internal::ChangeVectorTypes::copy(tmp,distributed_stokes_solution);
+
         stokes_matrix.vmult(tmp,rhs_copy);
         sim.pcout << "   BiCGStab: " << tmp.l2_norm() << std::endl;
 
