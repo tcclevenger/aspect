@@ -1825,34 +1825,34 @@ namespace aspect
     //  {
         try
           {
-      // create Solver controls for the cheap and expensive solver phase
-      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                          solver_tolerance, true);
+//      // create Solver controls for the cheap and expensive solver phase
+//      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+//                                          solver_tolerance, true);
 
-      solver_control_cheap.enable_history_data();
+//      solver_control_cheap.enable_history_data();
 
-      // create a cheap preconditioner that consists of only a single V-cycle
-      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                            prec_S, prec_A,
-                            false,
-                            sim.parameters.linear_solver_A_block_tolerance,
-                            sim.parameters.linear_solver_S_block_tolerance,
-                            sim.parameters.use_block_diagonal_preconditioner);
+//      // create a cheap preconditioner that consists of only a single V-cycle
+//      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+//      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+//                            prec_S, prec_A,
+//                            false,
+//                            sim.parameters.linear_solver_A_block_tolerance,
+//                            sim.parameters.linear_solver_S_block_tolerance,
+//                            sim.parameters.use_block_diagonal_preconditioner);
 
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+//            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-            timer.restart();
-            solver.solve(stokes_matrix,
-                         solution_copy,
-                         rhs_copy,
-                         preconditioner_cheap);
-            timer.stop();
-            const double solve_time = timer.last_wall_time();
-            minres_m = solver_control_cheap.last_step();
-            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s).   "
-                      << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
+//            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+//            timer.restart();
+//            solver.solve(stokes_matrix,
+//                         solution_copy,
+//                         rhs_copy,
+//                         preconditioner_cheap);
+//            timer.stop();
+//            const double solve_time = timer.last_wall_time();
+//            minres_m = solver_control_cheap.last_step();
+//            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s).   "
+//                      << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
           }
         catch (SolverControl::NoConvergence)
           {
