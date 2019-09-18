@@ -1791,63 +1791,63 @@ namespace aspect
     unsigned int fgmres_m = 0;
     unsigned int bicgstab_m = 0;
 
-    try
-      {
-        SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-        solver(solver_control_cheap, mem,
-               SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
-               AdditionalData(sim.parameters.stokes_gmres_restart_length));
+//    try
+//      {
+//        SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
+//        solver(solver_control_cheap, mem,
+//               SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+//               AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
-        solution_copy = 0.0;
-        timer.restart();
-        solver.solve (stokes_matrix,
-                      solution_copy,
-                      rhs_copy,
-                      preconditioner_cheap);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        fgmres_m = solver_control_cheap.last_step();
-        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
+//        solution_copy = 0.0;
+//        timer.restart();
+//        solver.solve (stokes_matrix,
+//                      solution_copy,
+//                      rhs_copy,
+//                      preconditioner_cheap);
+//        timer.stop();
+//        const double solve_time = timer.last_wall_time();
+//        fgmres_m = solver_control_cheap.last_step();
+//        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
+//                  << std::endl;
 
-        final_linear_residual = solver_control_cheap.last_value();
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "FGMRES DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
-      }
+//        final_linear_residual = solver_control_cheap.last_value();
+//      }
+//    catch (SolverControl::NoConvergence)
+//      {
+//        sim.pcout << "********************************************************************" << std::endl
+//                  << "FGMRES DID NOT CONVERGE AFTER "
+//                  << solver_control_cheap.last_step()
+//                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+//                  << "********************************************************************" << std::endl;
+//      }
 
-    //if (sim.parameters.use_block_diagonal_preconditioner)
-    //  {
-        try
-          {
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+//    //if (sim.parameters.use_block_diagonal_preconditioner)
+//    //  {
+//        try
+//          {
+//            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-            solution_copy = 0.0;
-            timer.restart();
-            solver.solve(stokes_matrix,
-                         solution_copy,
-                         rhs_copy,
-                         preconditioner_cheap);
-            timer.stop();
-            const double solve_time = timer.last_wall_time();
-            minres_m = solver_control_cheap.last_step();
-            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
-                      << std::endl;
-          }
-        catch (SolverControl::NoConvergence)
-          {
-            sim.pcout << "********************************************************************" << std::endl
-                      << "MINRES DID NOT CONVERGE AFTER "
-                      << solver_control_cheap.last_step()
-                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                      << "********************************************************************" << std::endl;
-          }
-      //}
+//            solution_copy = 0.0;
+//            timer.restart();
+//            solver.solve(stokes_matrix,
+//                         solution_copy,
+//                         rhs_copy,
+//                         preconditioner_cheap);
+//            timer.stop();
+//            const double solve_time = timer.last_wall_time();
+//            minres_m = solver_control_cheap.last_step();
+//            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+//                      << std::endl;
+//          }
+//        catch (SolverControl::NoConvergence)
+//          {
+//            sim.pcout << "********************************************************************" << std::endl
+//                      << "MINRES DID NOT CONVERGE AFTER "
+//                      << solver_control_cheap.last_step()
+//                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+//                      << "********************************************************************" << std::endl;
+//          }
+//      //}
 
     try
       {
