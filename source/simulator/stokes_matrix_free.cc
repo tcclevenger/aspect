@@ -1782,6 +1782,7 @@ namespace aspect
                               sim.parameters.use_block_diagonal_preconditioner);
 
     sim.pcout << std::endl << std::endl;
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
@@ -1792,13 +1793,12 @@ namespace aspect
 
     try
       {
-        PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-
         SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
         solver(solver_control_cheap, mem,
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1823,43 +1823,35 @@ namespace aspect
 
     //if (sim.parameters.use_block_diagonal_preconditioner)
     //  {
-    try
-      {
-        PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+        try
+          {
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem);
-
-        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-        timer.restart();
-        solver.solve(stokes_matrix,
-                     solution_copy,
-                     rhs_copy,
-                     preconditioner_cheap);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        minres_m = solver_control_cheap.last_step();
-        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "MinRES DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
-      }
-    //}
+            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+            timer.restart();
+            solver.solve(stokes_matrix,
+                         solution_copy,
+                         rhs_copy,
+                         preconditioner_cheap);
+            timer.stop();
+            const double solve_time = timer.last_wall_time();
+            minres_m = solver_control_cheap.last_step();
+            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+                      << std::endl;
+          }
+        catch (SolverControl::NoConvergence)
+          {
+            sim.pcout << "********************************************************************" << std::endl
+                      << "MINRES DID NOT CONVERGE AFTER "
+                      << solver_control_cheap.last_step()
+                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                      << "********************************************************************" << std::endl;
+          }
+      //}
 
     try
       {
-        PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-//        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData
-//            additional_data(false);
-
-        //Cheap residual?
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                             solver(solver_control_cheap, mem);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
@@ -1881,6 +1873,8 @@ namespace aspect
                   << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
+
+
 
     const unsigned int n_scalar = 1000;
     const unsigned int n_matvec = 100;
