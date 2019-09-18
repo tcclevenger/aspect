@@ -1799,15 +1799,6 @@ namespace aspect
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
-        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-
-        dealii::LinearAlgebra::distributed::BlockVector<double> tmp(2);
-        stokes_matrix.initialize_dof_vector(tmp);
-        tmp.collect_sizes();
-        internal::ChangeVectorTypes::copy(tmp,distributed_stokes_solution);
-        stokes_matrix.vmult(tmp,rhs_copy);
-        sim.pcout << "   FGMRES: " << tmp.l2_norm() << std::endl;
-
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1816,8 +1807,8 @@ namespace aspect
         timer.stop();
         const double solve_time = timer.last_wall_time();
         fgmres_m = solver_control_cheap.last_step();
-        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s).   "
-                  << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
+        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
 
         final_linear_residual = solver_control_cheap.last_value();
       }
@@ -1836,22 +1827,7 @@ namespace aspect
       {
         PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
-        // create Solver controls for the cheap and expensive solver phase
-        SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                            solver_tolerance, true);
-
-        solver_control_cheap.enable_history_data();
-
-        // create a cheap preconditioner that consists of only a single V-cycle
-        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-        preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                              prec_S, prec_A,
-                              false,
-                              sim.parameters.linear_solver_A_block_tolerance,
-                              sim.parameters.linear_solver_S_block_tolerance,
-                              sim.parameters.use_block_diagonal_preconditioner);
-
-        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
@@ -1862,8 +1838,8 @@ namespace aspect
         timer.stop();
         const double solve_time = timer.last_wall_time();
         minres_m = solver_control_cheap.last_step();
-        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s).   "
-                  << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
+        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
       }
     catch (SolverControl::NoConvergence)
       {
@@ -1878,38 +1854,15 @@ namespace aspect
     try
       {
         PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-
-        // create Solver controls for the cheap and expensive solver phase
-        SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                            solver_tolerance, true);
-
-        solver_control_cheap.enable_history_data();
-
-        // create a cheap preconditioner that consists of only a single V-cycle
-        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-        preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                              prec_S, prec_A,
-                              false,
-                              sim.parameters.linear_solver_A_block_tolerance,
-                              sim.parameters.linear_solver_S_block_tolerance,
-                              sim.parameters.use_block_diagonal_preconditioner);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData
+            additional_data(true);
 
         //Cheap residual?
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
                                                                              solver(solver_control_cheap, mem,
-                                                                                    SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double> >::
-                                                                                    AdditionalData());
+                                                                                    additional_data);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-
-        dealii::LinearAlgebra::distributed::BlockVector<double> tmp(2);
-        stokes_matrix.initialize_dof_vector(tmp);
-        tmp.collect_sizes();
-        internal::ChangeVectorTypes::copy(tmp,distributed_stokes_solution);
-
-        stokes_matrix.vmult(tmp,rhs_copy);
-        sim.pcout << "   BiCGStab: " << tmp.l2_norm() << std::endl;
-
         timer.restart();
         solver.solve(stokes_matrix,
                      solution_copy,
@@ -1918,8 +1871,8 @@ namespace aspect
         timer.stop();
         const double solve_time = timer.last_wall_time();
         bicgstab_m = solver_control_cheap.last_step();
-        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s).   "
-                  << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
+        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
       }
     catch (SolverControl::NoConvergence)
       {
@@ -1929,11 +1882,6 @@ namespace aspect
                   << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
       }
-
-
-
-
-
 
     const unsigned int n_scalar = 1000;
     const unsigned int n_matvec = 100;
