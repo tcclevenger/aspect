@@ -1853,7 +1853,9 @@ namespace aspect
       {
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem_bicgstab);
 
-        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+        solution_copy.update_ghost_values();
+
         timer.restart();
         solver.solve(stokes_matrix,
                      solution_copy,
@@ -1905,7 +1907,6 @@ namespace aspect
       }
     timer.stop();
     const double scalar_tril = timer.last_wall_time()/n_scalar;
-
     sim.pcout << "Trilinos Scalar Product Timings: " << scalar_tril << std::endl;
 
     timer.restart();
@@ -1915,7 +1916,6 @@ namespace aspect
       }
     timer.stop();
     const double scalar_deal = timer.last_wall_time()/n_scalar;
-
     sim.pcout << "deal.II Scalar Product Timings:  " << scalar_deal << std::endl;
 
     timer.restart();
@@ -1926,7 +1926,6 @@ namespace aspect
       }
     timer.stop();
     const double matvec = timer.last_wall_time()/n_matvec;
-
     sim.pcout << "Matrix-vector Product Timings:   " << matvec << std::endl;
 
     internal::ChangeVectorTypes::copy(tmp4,distributed_stokes_solution);
@@ -1938,10 +1937,11 @@ namespace aspect
       }
     timer.stop();
     const double prec = timer.last_wall_time()/n_prec;
-
     sim.pcout << "Preconditioner Vmult Timings:    " << prec << std::endl;
 
+
     sim.pcout << std::endl;
+
 
     const double minres_predict = 2*minres_m*scalar_deal
                                   + (minres_m+1)*matvec
