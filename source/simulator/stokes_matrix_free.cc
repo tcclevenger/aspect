@@ -1799,7 +1799,13 @@ namespace aspect
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-        sim.pcout << "   FGMRES: " << solution_copy.l2_norm() << std::endl;
+
+        dealii::LinearAlgebra::distributed::BlockVector<double> tmp(2);
+        stokes_matrix.initialize_dof_vector(tmp);
+        tmp.collect_sizes();
+        stokes_matrix.vmult(tmp,rhs_copy);
+        sim.pcout << "   FGMRES: " << tmp.l2_norm() << std::endl;
+
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1844,7 +1850,6 @@ namespace aspect
             SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
             internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-            sim.pcout << "   Minres: " << solution_copy.l2_norm() << std::endl;
             timer.restart();
             solver.solve(stokes_matrix,
                          solution_copy,
@@ -1886,7 +1891,13 @@ namespace aspect
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-        sim.pcout << "   BiCGStab: " << solution_copy.l2_norm() << std::endl;
+
+        dealii::LinearAlgebra::distributed::BlockVector<double> tmp(2);
+        stokes_matrix.initialize_dof_vector(tmp);
+        tmp.collect_sizes();
+        stokes_matrix.vmult(tmp,rhs_copy);
+        sim.pcout << "   BiCGStab: " << tmp.l2_norm() << std::endl;
+
         timer.restart();
         solver.solve(stokes_matrix,
                      solution_copy,
