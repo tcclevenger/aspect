@@ -1812,19 +1812,19 @@ namespace aspect
 
     try
       {
-//        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-//        solution_copy = 0;
-//        timer.restart();
-//        solver.solve(stokes_matrix,
-//                     solution_copy,
-//                     rhs_copy,
-//                     preconditioner_cheap);
-//        timer.stop();
-//        const double solve_time = timer.last_wall_time();
-//        minres_m = solver_control_cheap.last_step();
-//        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
-//                  << std::endl;
+        solution_copy = 0;
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        minres_m = solver_control_cheap.last_step();
+        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
       }
     catch (SolverControl::NoConvergence)
       {
