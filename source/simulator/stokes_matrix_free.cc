@@ -1853,8 +1853,9 @@ namespace aspect
       {
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem_bicgstab);
 
-        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-        solution_copy.update_ghost_values();
+
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+        solution_copy = 0;
 
         timer.restart();
         solver.solve(stokes_matrix,
