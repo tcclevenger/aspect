@@ -1829,10 +1829,10 @@ namespace aspect
 
             solution_copy = 0.0;
             timer.restart();
-//            solver.solve(stokes_matrix,
-//                         solution_copy,
-//                         rhs_copy,
-//                         preconditioner_cheap);
+            solver.solve(stokes_matrix,
+                         solution_copy,
+                         rhs_copy,
+                         preconditioner_cheap);
             timer.stop();
             const double solve_time = timer.last_wall_time();
             minres_m = solver_control_cheap.last_step();
