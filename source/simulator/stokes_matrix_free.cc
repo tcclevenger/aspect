@@ -1787,9 +1787,34 @@ namespace aspect
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
     Timer timer(sim.mpi_communicator,true);
-    unsigned int minres_m = 0.0;
-    unsigned int fgmres_m = 0.0;
-    unsigned int bicgstab_m = 0.0;
+    unsigned int minres_m = 0;
+    unsigned int fgmres_m = 0;
+    unsigned int bicgstab_m = 0;
+
+    try
+      {
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+
+        solution_copy = 0.0;
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        bicgstab_m = solver_control_cheap.last_step();
+        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "BiCGStab DID NOT CONVERGE AFTER "
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
 
     try
       {
@@ -1827,7 +1852,7 @@ namespace aspect
           {
             SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-            solution_copy = 0;
+            solution_copy = 0.0;
             timer.restart();
             solver.solve(stokes_matrix,
                          solution_copy,
@@ -1849,30 +1874,7 @@ namespace aspect
           }
       //}
 
-    try
-      {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-        solution_copy = 0;
-        timer.restart();
-        solver.solve(stokes_matrix,
-                     solution_copy,
-                     rhs_copy,
-                     preconditioner_cheap);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control_cheap.last_step();
-        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "BiCGStab DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
-      }
 
 
 
