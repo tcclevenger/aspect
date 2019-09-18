@@ -1800,35 +1800,6 @@ namespace aspect
 
     try
       {
-        SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-        solver(solver_control_cheap, mem,
-               SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
-               AdditionalData(sim.parameters.stokes_gmres_restart_length));
-
-        timer.restart();
-        solver.solve (stokes_matrix,
-                      solution_copy,
-                      rhs_copy,
-                      preconditioner_cheap);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        fgmres_m = solver_control_cheap.last_step();
-        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
-
-        final_linear_residual = solver_control_cheap.last_value();
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "FGMRES DID NOT CONVERGE AFTER "
-                  << solver_control_cheap.last_step()
-                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
-      }
-
-    try
-      {
         const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
         preconditioner_test (stokes_matrix, velocity_matrix, mass_matrix,
                              prec_S, prec_A,
@@ -1859,6 +1830,34 @@ namespace aspect
                   << "********************************************************************" << std::endl;
       }
 
+    try
+      {
+        SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
+        solver(solver_control_cheap, mem,
+               SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+               AdditionalData(sim.parameters.stokes_gmres_restart_length));
+
+        timer.restart();
+        solver.solve (stokes_matrix,
+                      solution_copy,
+                      rhs_copy,
+                      preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        fgmres_m = solver_control_cheap.last_step();
+        sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+
+        final_linear_residual = solver_control_cheap.last_value();
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "FGMRES DID NOT CONVERGE AFTER "
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
 
     if (sim.parameters.use_block_diagonal_preconditioner)
       {
