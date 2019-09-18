@@ -1855,7 +1855,7 @@ namespace aspect
       {
         PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData
-            additional_data(true);
+            additional_data(false);
 
         //Cheap residual?
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
