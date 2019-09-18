@@ -1854,13 +1854,12 @@ namespace aspect
     try
       {
         PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData
-            additional_data(false);
+//        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData
+//            additional_data(false);
 
         //Cheap residual?
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                             solver(solver_control_cheap, mem,
-                                                                                    additional_data);
+                                                                             solver(solver_control_cheap, mem);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
