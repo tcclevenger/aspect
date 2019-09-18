@@ -1783,6 +1783,8 @@ namespace aspect
 
     sim.pcout << std::endl << std::endl;
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_minres;
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_bicgstab;
 
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
@@ -1825,7 +1827,7 @@ namespace aspect
     //  {
         try
           {
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem);
 
             internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
             timer.restart();
@@ -1851,7 +1853,7 @@ namespace aspect
 
     try
       {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
