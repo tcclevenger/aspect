@@ -1763,13 +1763,6 @@ namespace aspect
     solver_control_cheap.enable_history_data();
     solver_control_expensive.enable_history_data();
 
-    SolverControl solver_control_bicgstab (sim.parameters.n_cheap_stokes_solver_steps,
-                                           solver_tolerance, true);
-    solver_control_bicgstab.enable_history_data();
-    SolverControl solver_control_minres (sim.parameters.n_cheap_stokes_solver_steps,
-                                         solver_tolerance, true);
-    solver_control_minres.enable_history_data();
-
     // create a cheap preconditioner that consists of only a single V-cycle
     const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
     preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
@@ -1800,43 +1793,12 @@ namespace aspect
 
     try
       {
-        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-        preconditioner_test (stokes_matrix, velocity_matrix, mass_matrix,
-                             prec_S, prec_A,
-                             false,
-                             sim.parameters.linear_solver_A_block_tolerance,
-                             sim.parameters.linear_solver_S_block_tolerance,
-                             sim.parameters.use_block_diagonal_preconditioner);
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_bicgstab);
-
-        solution_copy = 0;
-        timer.restart();
-        solver.solve(stokes_matrix,
-                     solution_copy,
-                     rhs_copy,
-                     preconditioner_test);
-        timer.stop();
-        const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control_bicgstab.last_step();
-        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
-                  << std::endl;
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        sim.pcout << "********************************************************************" << std::endl
-                  << "BiCGStab DID NOT CONVERGE AFTER "
-                  << solver_control_bicgstab.last_step()
-                  << " ITERATIONS. res=" << solver_control_bicgstab.last_value() << std::endl
-                  << "********************************************************************" << std::endl;
-      }
-
-    try
-      {
         SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
         solver(solver_control_cheap, mem,
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
+        solution_copy = 0.0;
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1859,29 +1821,21 @@ namespace aspect
                   << "********************************************************************" << std::endl;
       }
 
-    if (sim.parameters.use_block_diagonal_preconditioner)
-      {
+    //if (sim.parameters.use_block_diagonal_preconditioner)
+    //  {
         try
           {
-            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-            preconditioner_test (stokes_matrix, velocity_matrix, mass_matrix,
-                                 prec_S, prec_A,
-                                 false,
-                                 sim.parameters.linear_solver_A_block_tolerance,
-                                 sim.parameters.linear_solver_S_block_tolerance,
-                                 sim.parameters.use_block_diagonal_preconditioner);
-
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_minres);
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
             solution_copy = 0;
             timer.restart();
             solver.solve(stokes_matrix,
                          solution_copy,
                          rhs_copy,
-                         preconditioner_test);
+                         preconditioner_cheap);
             timer.stop();
             const double solve_time = timer.last_wall_time();
-            minres_m = solver_control_minres.last_step();
+            minres_m = solver_control_cheap.last_step();
             sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
                       << std::endl;
           }
@@ -1889,10 +1843,35 @@ namespace aspect
           {
             sim.pcout << "********************************************************************" << std::endl
                       << "MINRES DID NOT CONVERGE AFTER "
-                      << solver_control_minres.last_step()
-                      << " ITERATIONS. res=" << solver_control_minres.last_value() << std::endl
+                      << solver_control_cheap.last_step()
+                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                       << "********************************************************************" << std::endl;
           }
+      //}
+
+    try
+      {
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+
+        solution_copy = 0;
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        bicgstab_m = solver_control_cheap.last_step();
+        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "BiCGStab DID NOT CONVERGE AFTER "
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
       }
 
 
