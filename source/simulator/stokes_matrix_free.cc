@@ -1821,33 +1821,33 @@ namespace aspect
                   << "********************************************************************" << std::endl;
       }
 
-//    //if (sim.parameters.use_block_diagonal_preconditioner)
-//    //  {
-//        try
-//          {
-//            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+    //if (sim.parameters.use_block_diagonal_preconditioner)
+    //  {
+        try
+          {
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-//            solution_copy = 0.0;
-//            timer.restart();
+            solution_copy = 0.0;
+            timer.restart();
 //            solver.solve(stokes_matrix,
 //                         solution_copy,
 //                         rhs_copy,
 //                         preconditioner_cheap);
-//            timer.stop();
-//            const double solve_time = timer.last_wall_time();
-//            minres_m = solver_control_cheap.last_step();
-//            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
-//                      << std::endl;
-//          }
-//        catch (SolverControl::NoConvergence)
-//          {
-//            sim.pcout << "********************************************************************" << std::endl
-//                      << "MINRES DID NOT CONVERGE AFTER "
-//                      << solver_control_cheap.last_step()
-//                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-//                      << "********************************************************************" << std::endl;
-//          }
-//      //}
+            timer.stop();
+            const double solve_time = timer.last_wall_time();
+            minres_m = solver_control_cheap.last_step();
+            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
+                      << std::endl;
+          }
+        catch (SolverControl::NoConvergence)
+          {
+            sim.pcout << "********************************************************************" << std::endl
+                      << "MINRES DID NOT CONVERGE AFTER "
+                      << solver_control_cheap.last_step()
+                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                      << "********************************************************************" << std::endl;
+          }
+      //}
 
     try
       {
