@@ -1859,7 +1859,7 @@ namespace aspect
         catch (SolverControl::NoConvergence)
           {
             sim.pcout << "********************************************************************" << std::endl
-                      << "MINRES DID NOT CONVERGE AFTER "
+                      << "MinRES DID NOT CONVERGE AFTER "
                       << solver_control_cheap.last_step()
                       << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                       << "********************************************************************" << std::endl;
