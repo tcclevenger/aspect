@@ -1782,7 +1782,6 @@ namespace aspect
                               sim.parameters.use_block_diagonal_preconditioner);
 
     sim.pcout << std::endl << std::endl;
-    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
@@ -1793,6 +1792,8 @@ namespace aspect
 
     try
       {
+        PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+
         SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
         solver(solver_control_cheap, mem,
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
@@ -1831,69 +1832,73 @@ namespace aspect
 
     //if (sim.parameters.use_block_diagonal_preconditioner)
     //  {
-        try
-          {
-      // create Solver controls for the cheap and expensive solver phase
-      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                          solver_tolerance, true);
+    try
+      {
+        PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
-      solver_control_cheap.enable_history_data();
+        // create Solver controls for the cheap and expensive solver phase
+        SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                            solver_tolerance, true);
 
-      // create a cheap preconditioner that consists of only a single V-cycle
-      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                            prec_S, prec_A,
-                            false,
-                            sim.parameters.linear_solver_A_block_tolerance,
-                            sim.parameters.linear_solver_S_block_tolerance,
-                            sim.parameters.use_block_diagonal_preconditioner);
+        solver_control_cheap.enable_history_data();
 
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+        // create a cheap preconditioner that consists of only a single V-cycle
+        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+        preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                              prec_S, prec_A,
+                              false,
+                              sim.parameters.linear_solver_A_block_tolerance,
+                              sim.parameters.linear_solver_S_block_tolerance,
+                              sim.parameters.use_block_diagonal_preconditioner);
 
-            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-            timer.restart();
-            solver.solve(stokes_matrix,
-                         solution_copy,
-                         rhs_copy,
-                         preconditioner_cheap);
-            timer.stop();
-            const double solve_time = timer.last_wall_time();
-            minres_m = solver_control_cheap.last_step();
-            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s).   "
-                      << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
-          }
-        catch (SolverControl::NoConvergence)
-          {
-            sim.pcout << "********************************************************************" << std::endl
-                      << "MinRES DID NOT CONVERGE AFTER "
-                      << solver_control_cheap.last_step()
-                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                      << "********************************************************************" << std::endl;
-          }
-      //}
+        SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        minres_m = solver_control_cheap.last_step();
+        sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s).   "
+                  << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "MinRES DID NOT CONVERGE AFTER "
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
+    //}
 
     try
       {
-      // create Solver controls for the cheap and expensive solver phase
-      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                          solver_tolerance, true);
+        PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
-      solver_control_cheap.enable_history_data();
+        // create Solver controls for the cheap and expensive solver phase
+        SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                            solver_tolerance, true);
 
-      // create a cheap preconditioner that consists of only a single V-cycle
-      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                            prec_S, prec_A,
-                            false,
-                            sim.parameters.linear_solver_A_block_tolerance,
-                            sim.parameters.linear_solver_S_block_tolerance,
-                            sim.parameters.use_block_diagonal_preconditioner);
+        solver_control_cheap.enable_history_data();
 
-      //Cheap residual?
+        // create a cheap preconditioner that consists of only a single V-cycle
+        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+        preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                              prec_S, prec_A,
+                              false,
+                              sim.parameters.linear_solver_A_block_tolerance,
+                              sim.parameters.linear_solver_S_block_tolerance,
+                              sim.parameters.use_block_diagonal_preconditioner);
+
+        //Cheap residual?
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
-            solver(solver_control_cheap, mem,
-                   SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double> >::
-                           AdditionalData());
+                                                                             solver(solver_control_cheap, mem,
+                                                                                    SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+                                                                                    AdditionalData());
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
 
