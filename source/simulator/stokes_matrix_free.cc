@@ -1764,11 +1764,29 @@ namespace aspect
     solver_control_expensive.enable_history_data();
 
     SolverControl solver_control_bicgstab (sim.parameters.n_cheap_stokes_solver_steps,
-                                       solver_tolerance, true);
+                                           solver_tolerance, true);
     solver_control_bicgstab.enable_history_data();
     SolverControl solver_control_minres (sim.parameters.n_cheap_stokes_solver_steps,
-                                       solver_tolerance, true);
+                                         solver_tolerance, true);
     solver_control_minres.enable_history_data();
+
+    // create a cheap preconditioner that consists of only a single V-cycle
+    const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+    preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                          prec_S, prec_A,
+                          false,
+                          sim.parameters.linear_solver_A_block_tolerance,
+                          sim.parameters.linear_solver_S_block_tolerance,
+                          sim.parameters.use_block_diagonal_preconditioner);
+
+    // create an expensive preconditioner that solves for the A block with CG
+    const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+    preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
+                              prec_S, prec_A,
+                              true,
+                              sim.parameters.linear_solver_A_block_tolerance,
+                              sim.parameters.linear_solver_S_block_tolerance,
+                              sim.parameters.use_block_diagonal_preconditioner);
 
     sim.pcout << std::endl << std::endl;
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
@@ -1782,14 +1800,6 @@ namespace aspect
 
     try
       {
-      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                            prec_S, prec_A,
-                            false,
-                            sim.parameters.linear_solver_A_block_tolerance,
-                            sim.parameters.linear_solver_S_block_tolerance,
-                            sim.parameters.use_block_diagonal_preconditioner);
-
         SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
         solver(solver_control_cheap, mem,
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
@@ -1819,14 +1829,13 @@ namespace aspect
 
     try
       {
-      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                            prec_S, prec_A,
-                            false,
-                            sim.parameters.linear_solver_A_block_tolerance,
-                            sim.parameters.linear_solver_S_block_tolerance,
-                            sim.parameters.use_block_diagonal_preconditioner);
-
+        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+        preconditioner_test (stokes_matrix, velocity_matrix, mass_matrix,
+                             prec_S, prec_A,
+                             false,
+                             sim.parameters.linear_solver_A_block_tolerance,
+                             sim.parameters.linear_solver_S_block_tolerance,
+                             sim.parameters.use_block_diagonal_preconditioner);
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_bicgstab);
 
         solution_copy = 0;
@@ -1834,7 +1843,7 @@ namespace aspect
         solver.solve(stokes_matrix,
                      solution_copy,
                      rhs_copy,
-                     preconditioner_cheap);
+                     preconditioner_test);
         timer.stop();
         const double solve_time = timer.last_wall_time();
         bicgstab_m = solver_control_bicgstab.last_step();
@@ -1855,13 +1864,13 @@ namespace aspect
       {
         try
           {
-        const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-        preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                              prec_S, prec_A,
-                              false,
-                              sim.parameters.linear_solver_A_block_tolerance,
-                              sim.parameters.linear_solver_S_block_tolerance,
-                              sim.parameters.use_block_diagonal_preconditioner);
+            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+            preconditioner_test (stokes_matrix, velocity_matrix, mass_matrix,
+                                 prec_S, prec_A,
+                                 false,
+                                 sim.parameters.linear_solver_A_block_tolerance,
+                                 sim.parameters.linear_solver_S_block_tolerance,
+                                 sim.parameters.use_block_diagonal_preconditioner);
 
             SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_minres);
 
@@ -1870,7 +1879,7 @@ namespace aspect
             solver.solve(stokes_matrix,
                          solution_copy,
                          rhs_copy,
-                         preconditioner_cheap);
+                         preconditioner_test);
             timer.stop();
             const double solve_time = timer.last_wall_time();
             minres_m = solver_control_minres.last_step();
