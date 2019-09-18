@@ -1863,7 +1863,7 @@ namespace aspect
         const double solve_time = timer.last_wall_time();
         bicgstab_m = solver_control_cheap.last_step();
         sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s).   "
-                  << rhs_copy.l2_norm() << std::endl;
+                  << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
       }
     catch (SolverControl::NoConvergence)
       {
