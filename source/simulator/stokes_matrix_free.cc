@@ -1798,7 +1798,7 @@ namespace aspect
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
-        solution_copy = 0.0;
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1827,7 +1827,7 @@ namespace aspect
           {
             SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-            solution_copy = 0.0;
+            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
             timer.restart();
             solver.solve(stokes_matrix,
                          solution_copy,
@@ -1853,7 +1853,7 @@ namespace aspect
       {
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-        solution_copy = 0.0;
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
         solver.solve(stokes_matrix,
                      solution_copy,
