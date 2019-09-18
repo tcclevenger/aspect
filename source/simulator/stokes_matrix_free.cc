@@ -1851,7 +1851,9 @@ namespace aspect
 
     try
       {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem_bicgstab);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
+            solver(solver_control_cheap,mem_bicgstab,
+                   SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(false));
 
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
