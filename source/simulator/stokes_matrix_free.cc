@@ -1799,7 +1799,7 @@ namespace aspect
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-        std::pcout << "   FGMRES: " << solution_copy.l2_norm() << std::endl;
+        sim.pcout << "   FGMRES: " << solution_copy.l2_norm() << std::endl;
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1844,7 +1844,7 @@ namespace aspect
             SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
             internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-            std::pcout << "   Minres: " << solution_copy.l2_norm() << std::endl;
+            sim.pcout << "   Minres: " << solution_copy.l2_norm() << std::endl;
             timer.restart();
             solver.solve(stokes_matrix,
                          solution_copy,
@@ -1886,7 +1886,7 @@ namespace aspect
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-        std::pcout << "   BiCGStab: " << solution_copy.l2_norm() << std::endl;
+        sim.pcout << "   BiCGStab: " << solution_copy.l2_norm() << std::endl;
         timer.restart();
         solver.solve(stokes_matrix,
                      solution_copy,
