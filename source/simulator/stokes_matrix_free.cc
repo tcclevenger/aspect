@@ -1853,7 +1853,7 @@ namespace aspect
       {
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
-        //solution_copy = 0.0;
+        solution_copy = 0.0;
         timer.restart();
         solver.solve(stokes_matrix,
                      solution_copy,
