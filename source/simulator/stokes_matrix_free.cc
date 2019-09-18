@@ -1825,6 +1825,21 @@ namespace aspect
     //  {
         try
           {
+      // create Solver controls for the cheap and expensive solver phase
+      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                          solver_tolerance, true);
+
+      solver_control_cheap.enable_history_data();
+
+      // create a cheap preconditioner that consists of only a single V-cycle
+      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                            prec_S, prec_A,
+                            false,
+                            sim.parameters.linear_solver_A_block_tolerance,
+                            sim.parameters.linear_solver_S_block_tolerance,
+                            sim.parameters.use_block_diagonal_preconditioner);
+
             SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
             internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
@@ -1851,6 +1866,21 @@ namespace aspect
 
     try
       {
+      // create Solver controls for the cheap and expensive solver phase
+      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                          solver_tolerance, true);
+
+      solver_control_cheap.enable_history_data();
+
+      // create a cheap preconditioner that consists of only a single V-cycle
+      const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                            prec_S, prec_A,
+                            false,
+                            sim.parameters.linear_solver_A_block_tolerance,
+                            sim.parameters.linear_solver_S_block_tolerance,
+                            sim.parameters.use_block_diagonal_preconditioner);
+
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
