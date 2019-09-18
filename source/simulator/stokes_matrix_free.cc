@@ -1836,8 +1836,8 @@ namespace aspect
             timer.stop();
             const double solve_time = timer.last_wall_time();
             minres_m = solver_control_cheap.last_step();
-            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
-                      << std::endl;
+            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s).   "
+                      << rhs_copy.l2_norm() << "   " << solution_copy.l2_norm() << std::endl;
           }
         catch (SolverControl::NoConvergence)
           {
