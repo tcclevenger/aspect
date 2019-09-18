@@ -1889,7 +1889,11 @@ namespace aspect
                             sim.parameters.linear_solver_S_block_tolerance,
                             sim.parameters.use_block_diagonal_preconditioner);
 
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap);
+      //Cheap residual?
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
+            solver(solver_control_cheap, mem,
+                   SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+                           AdditionalData());
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
 
