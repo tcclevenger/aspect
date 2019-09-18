@@ -339,11 +339,9 @@ namespace aspect
                     throw QuietException();
               }
           }
-        if (use_block_diagonal_preconditioner == false)
           dst.block(1) *= -1.0;
       }
 
-      if (use_block_diagonal_preconditioner == false)
         {
           dealii::LinearAlgebra::distributed::BlockVector<double>  dst_tmp(dst);
           dst_tmp.block(0) = 0.0;
