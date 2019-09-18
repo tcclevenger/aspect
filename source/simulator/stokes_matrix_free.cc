@@ -1827,7 +1827,7 @@ namespace aspect
     //  {
         try
           {
-            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem);
+            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem_minres);
 
             internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
             timer.restart();
@@ -1853,7 +1853,7 @@ namespace aspect
 
     try
       {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem);
+        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem_bicgstab);
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
