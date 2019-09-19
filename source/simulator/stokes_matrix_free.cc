@@ -1781,13 +1781,11 @@ namespace aspect
 
     sim.pcout << std::endl << std::endl;
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_minres;
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_bicgstab;
 
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
     Timer timer(sim.mpi_communicator,true);
-    unsigned int minres_m = 0;
     unsigned int fgmres_m = 0;
     unsigned int bicgstab_m = 0;
 
@@ -1821,39 +1819,11 @@ namespace aspect
                   << "********************************************************************" << std::endl;
       }
 
-//    //if (sim.parameters.use_block_diagonal_preconditioner)
-//    //  {
-//        try
-//          {
-//            SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double>> solver(solver_control_cheap,mem_minres);
-
-//            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-//            timer.restart();
-//            solver.solve(stokes_matrix,
-//                         solution_copy,
-//                         rhs_copy,
-//                         preconditioner_cheap);
-//            timer.stop();
-//            const double solve_time = timer.last_wall_time();
-//            minres_m = solver_control_cheap.last_step();
-//            sim.pcout << "   Minres Solved in " << minres_m << " iterations (" << solve_time << "s)."
-//                      << std::endl;
-//          }
-//        catch (SolverControl::NoConvergence)
-//          {
-//            sim.pcout << "********************************************************************" << std::endl
-//                      << "MINRES DID NOT CONVERGE AFTER "
-//                      << solver_control_cheap.last_step()
-//                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-//                      << "********************************************************************" << std::endl;
-//          }
-//      //}
-
     try
       {
         SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
             solver(solver_control_cheap,mem_bicgstab,
-                   SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(false));
+                   SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(true));
 
 
         internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
@@ -1946,18 +1916,13 @@ namespace aspect
     sim.pcout << std::endl;
 
 
-    const double minres_predict = 2*minres_m*scalar_deal
-                                  + (minres_m+1)*matvec
-                                  + (minres_m+1)*prec;
-    sim.pcout << "Minres Prediction Timings:         " << minres_predict << std::endl;
-
-    const double fgmres_predict = (1/2)*(fgmres_m+1)*(fgmres_m+2)*scalar_deal
-                                  + (fgmres_m)*matvec
+    const double fgmres_predict = (1/2)*(fgmres_m)*(fgmres_m+5)*scalar_deal
+                                  + (2*fgmres_m)*matvec
                                   + (fgmres_m)*prec;
     sim.pcout << "FGMRES Prediction Timings:         " << fgmres_predict << std::endl;
 
-    const double bicgstab_predict = 6*bicgstab_m*scalar_deal
-                                    + 2*bicgstab_m*matvec
+    const double bicgstab_predict = 4*bicgstab_m*scalar_deal
+                                    + (1+3*bicgstab_m)*matvec
                                     + 2*bicgstab_m*prec;
     sim.pcout << "BiCGStab Prediction Timings:       " << bicgstab_predict << std::endl;
 
