@@ -1868,7 +1868,7 @@ namespace aspect
       temp_vec2 = 0;
 
       {
-        SolverControl solver_control_V0 (1000, solver_tolerance, true);
+        SolverControl solver_control_V0 (1000, 1e-4*rhs_copy.block(0).l2_norm(), true);
         SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
                                                solver(solver_control_V0);
         solver.solve(velocity_matrix,V0,rhs_copy.block(0),prec_A);
@@ -1925,7 +1925,7 @@ namespace aspect
           temp_vec2.block(1) = s1;
           stokes_matrix.vmult(temp_vec1,temp_vec2);
 
-          SolverControl solver_control_Vk (1000, solver_tolerance, true);
+          SolverControl solver_control_Vk (1000, rhs_copy.block(0).l2_norm(), true);
           SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
                                                                          solverk(solver_control_Vk);
           temp_vec2 = 0;
@@ -1970,8 +1970,8 @@ namespace aspect
 
       timer.stop();
       const double solve_time = timer.last_wall_time();
-      sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s) res = ."
-                << temp_vec1.l2_norm()
+      sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s) res = "
+                << temp_vec1.l2_norm() << " <? " << solver_tolerance
                 << std::endl;
     }
 
