@@ -1909,6 +1909,8 @@ namespace aspect
           else
             {
               double beta = (r1*z1)/(r0*z0);
+
+              sim.pcout << "beta: " << beta << std::endl;
               s1.sadd(beta,1.0,z1);
 
               r0 = r1;
