@@ -1953,14 +1953,25 @@ namespace aspect
                                       solver(solver_control_V0);
         V0 = 0;
         solver.solve(velocity_matrix,V0,temp_vec1.block(0),prec_A);
+
+        if (uzawa_m == 100)
+        {
+          uzawa_m = 10000000;
+          break;
+        }
       }
 
       solution_copy.block(0) = V0;
       solution_copy.block(1) = P0;
 
+      stokes_matrix.vmult(temp_vec1,solution_copy);
+      temp_vec1.sadd(-1.0,1.0,rhs_copy);
+
+
       timer.stop();
       const double solve_time = timer.last_wall_time();
-      sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s) res = ."
+                << temp_vec1.l2_norm()
                 << std::endl;
     }
 
