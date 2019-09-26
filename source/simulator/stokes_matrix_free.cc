@@ -1908,14 +1908,15 @@ namespace aspect
             s1 = z1;
           else
             {
+            sim.pcout  << "iter: " << uzawa_m << std::endl
+                       << "beta: " << beta << std::endl
+                       << "z0: " << z0.l2_norm() << std::endl
+                       << "z1: " << z1.l2_norm() << std::endl
+                       << "r0: " << r0.l2_norm() << std::endl
+                       << "r1: " << r1.l2_norm() << std::endl;
+
               double beta = (r1*z1)/(r0*z0);
 
-              sim.pcout  << "iter: " << uzawa_m << std::endl
-                         << "beta: " << beta << std::endl
-                         << "z0: " << z0.l2_norm() << std::endl
-                         << "z1: " << z1.l2_norm() << std::endl
-                         << "r0: " << r0.l2_norm() << std::endl
-                         << "r1: " << r1.l2_norm() << std::endl;
               s1.sadd(beta,1.0,z1);
 
               r0 = r1;
