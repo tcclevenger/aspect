@@ -1904,7 +1904,7 @@ namespace aspect
           uzawa_m += 1;
 
           prec_S.vmult(z1,r1);
-          if (uzama_m == 1)
+          if (uzawa_m == 1)
             s1 = z1;
           else
             {
