@@ -1850,6 +1850,97 @@ namespace aspect
       }
 
 
+    // UZAWA
+      {
+      SolverControl solver_control_V0 (1000, solver_tolerance, true);
+//      SolverControl solver_control_P (1000, solver_tolerance, true);
+//      SolverControl solver_control_V (1000, solver_tolerance, true);
+
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+        //solution_copy = 0;
+
+        timer.restart();
+        unsigned int uzawa_m = 0;
+        dealii::LinearAlgebra::distributed::Vector<double> P0(solution_copy.block(1));
+        dealii::LinearAlgebra::distributed::Vector<double> V0(solution_copy.block(0));
+        dealii::LinearAlgebra::distributed::BlockVector<double> temp_vec1(solution_copy);
+        dealii::LinearAlgebra::distributed::BlockVector<double> temp_vec2(solution_copy);
+        temp_vec1 = 0;
+        temp_vec2 = 0;
+
+        SolverCG<dealii::LinearAlgebra::distributed::BlockVector<double>>
+            solver(solver_control_V0);
+        solver.solve(velocity_matrix,V0,rhs_copy.block(1),prec_A);
+        temp_vec2.block(0) = V0;
+
+        stokes_matrix.vmult(temp_vec1,temp_vec2);
+
+        dealii::LinearAlgebra::distributed::Vector<double>
+            r0(solution_copy.block(1));
+        dealii::LinearAlgebra::distributed::Vector<double>
+            r1(solution_copy.block(1));
+        r0 = 0;
+        r1 = temp_vec1.block(1);
+
+        dealii::LinearAlgebra::distributed::Vector<double>
+            z0(solution_copy.block(1));
+        dealii::LinearAlgebra::distributed::Vector<double>
+            z1(solution_copy.block(1));
+        z0 = 0;
+        z1 = 0;
+
+        dealii::LinearAlgebra::distributed::Vector<double>
+            s1(solution_copy.block(1));
+        s1 = 0;
+
+        dealii::LinearAlgebra::distributed::Vector<double>
+            Khats(solution_copy.block(1));
+        Khats = 0;
+
+        while (r1.l2_norm() > solver_tolerance)
+        {
+          uzawa_m += 1;
+
+          prec_S.vmult(z1,r1);
+          if (uzama_m == 1)
+            s1 = z1;
+          else
+          {
+            double beta = (r1*z1)/(r0*z0);
+            s1.sadd(beta,1.0,z1);
+
+            r0 = r1;
+            z0 = z1;
+          }
+
+          temp_vec2 = 0;
+          temp_vec2.block(1) = s1;
+          stokes_matrix.vmult(temp_vec1,temp_vec2);
+
+          SolverControl solver_control_Vk (1000, solver_tolerance, true);
+          SolverCG<dealii::LinearAlgebra::distributed::BlockVector<double>>
+              solverk(solver_control_Vk);
+          temp_vec2 = 0;
+          solverk.solve(velocity_matrix,temp_vec2.block(0),temp_vec1.block(0),prec_A);
+
+          temp_vec2.block(1) = 0;
+          stokes_matrix.vmult(temp_vec1,temp_vec2);
+          //G^Tuk = temp_vec1.block(1)
+          Khats = temp_vec1.block(1);
+
+          double alpha = (r1*z1)/(s1*Khats);
+
+          P0 += alpha*s1;
+          r1 -= alpha*Khats;
+        }
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+
+
+
 
     const unsigned int n_scalar = 1000;
     const unsigned int n_matvec = 100;
