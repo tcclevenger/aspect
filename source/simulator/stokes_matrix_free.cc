@@ -1932,8 +1932,8 @@ namespace aspect
 
           double alpha = (r1*z1)/(s1*Khats);
 
-          P0 += alpha*s1;
-          r1 -= alpha*Khats;
+          P0.sadd(1.0,alpha,s1);
+          r1.sadd(1.0,-1.0*alpha,Khats);
         }
 
       {
