@@ -1937,16 +1937,16 @@ namespace aspect
         }
 
       {
-        temp2 = 0;
-        temp2.block(1) = P0;
-        stokes_matrix.vmult(temp1,temp2);
-        temp1.block(0).sadd(-1.0,1.0,rhs_copy.block(0));
+        temp_vec2 = 0;
+        temp_vec2.block(1) = P0;
+        stokes_matrix.vmult(temp_vec1,temp_vec2);
+        temp_vec1.block(0).sadd(-1.0,1.0,rhs_copy.block(0));
 
         SolverControl solver_control_V0 (1000, solver_tolerance, true);
         SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
                                       solver(solver_control_V0);
         V0 = 0;
-        solver.solve(velocity_matrix,V0,temp1.block(0),prec_A);
+        solver.solve(velocity_matrix,V0,temp_vec1.block(0),prec_A);
       }
 
       solution_copy.block(0) = V0;
