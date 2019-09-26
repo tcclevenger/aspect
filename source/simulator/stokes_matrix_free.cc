@@ -1940,6 +1940,12 @@ namespace aspect
 
           P0.sadd(1.0,alpha,s1);
           r1.sadd(1.0,-1.0*alpha,Khats);
+
+          if (uzawa_m == 100)
+          {
+            uzawa_m = 10000000;
+            break;
+          }
         }
 
       {
@@ -1953,12 +1959,6 @@ namespace aspect
                                       solver(solver_control_V0);
         V0 = 0;
         solver.solve(velocity_matrix,V0,temp_vec1.block(0),prec_A);
-
-        if (uzawa_m == 100)
-        {
-          uzawa_m = 10000000;
-          break;
-        }
       }
 
       solution_copy.block(0) = V0;
