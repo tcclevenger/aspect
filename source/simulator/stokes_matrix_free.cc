@@ -41,7 +41,7 @@
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/solver_minres.h>
 #include <deal.II/lac/solver_bicgstab.h>
-#include <deal.II/lac/solver_qmrs.h>
+#include <deal.II/lac/solver_idr.h>
 
 
 
@@ -1780,23 +1780,26 @@ namespace aspect
                               sim.parameters.use_block_diagonal_preconditioner);
 
     sim.pcout << std::endl << std::endl;
-    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_bicgstab;
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_fgmres;
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_idr1;
+    PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_idr2;
 
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
     Timer timer(sim.mpi_communicator,true);
     unsigned int fgmres_m = 0;
-    unsigned int bicgstab_m = 0;
+    unsigned int idr1_m = 0;
+    unsigned int idr2_m = 0;
 
+    // FGMRES
     try
       {
         SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-        solver(solver_control_cheap, mem,
+        solver(solver_control_cheap, mem_fgmres,
                SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
-        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         timer.restart();
         solver.solve (stokes_matrix,
                       solution_copy,
@@ -1819,14 +1822,15 @@ namespace aspect
                   << "********************************************************************" << std::endl;
       }
 
+    // IDR(1)
     try
       {
-        SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                             solver(solver_control_cheap,mem_bicgstab,
-                                                                                    SolverBicgstab<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(true));
+        SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
+                         solver(solver_control_cheap,mem_idr1,
+                         SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
 
 
-        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
         //solution_copy = 0;
 
         timer.restart();
@@ -1836,14 +1840,46 @@ namespace aspect
                      preconditioner_cheap);
         timer.stop();
         const double solve_time = timer.last_wall_time();
-        bicgstab_m = solver_control_cheap.last_step();
-        sim.pcout << "   BiCGStab Solved in " << bicgstab_m << " iterations (" << solve_time << "s)."
+        idr1_m = solver_control_cheap.last_step();
+        sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << "s)."
                   << std::endl;
       }
     catch (SolverControl::NoConvergence)
       {
         sim.pcout << "********************************************************************" << std::endl
-                  << "BiCGStab DID NOT CONVERGE AFTER "
+                  << "IDR(1) DID NOT CONVERGE AFTER "
+                  << solver_control_cheap.last_step()
+                  << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                  << "********************************************************************" << std::endl;
+      }
+
+    // IDR(2)
+    try
+      {
+        SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
+                         solver(solver_control_cheap,mem_idr2,
+                         SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
+                                AdditionalData(2));
+
+
+        internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+        //solution_copy = 0;
+
+        timer.restart();
+        solver.solve(stokes_matrix,
+                     solution_copy,
+                     rhs_copy,
+                     preconditioner_cheap);
+        timer.stop();
+        const double solve_time = timer.last_wall_time();
+        idr2_m = solver_control_cheap.last_step();
+        sim.pcout << "   IDR(2) Solved in " << idr2_m << " iterations (" << solve_time << "s)."
+                  << std::endl;
+      }
+    catch (SolverControl::NoConvergence)
+      {
+        sim.pcout << "********************************************************************" << std::endl
+                  << "IDR(2) DID NOT CONVERGE AFTER "
                   << solver_control_cheap.last_step()
                   << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                   << "********************************************************************" << std::endl;
@@ -1851,129 +1887,129 @@ namespace aspect
 
 
     // UZAWA
-    {
-//      SolverControl solver_control_P (1000, solver_tolerance, true);
-//      SolverControl solver_control_V (1000, solver_tolerance, true);
+//    {
+////      SolverControl solver_control_P (1000, solver_tolerance, true);
+////      SolverControl solver_control_V (1000, solver_tolerance, true);
 
-      internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
-      //solution_copy = 0;
+//      internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+//      //solution_copy = 0;
 
-      timer.restart();
-      unsigned int uzawa_m = 0;
-      dealii::LinearAlgebra::distributed::Vector<double> P0(solution_copy.block(1));
-      dealii::LinearAlgebra::distributed::Vector<double> V0(solution_copy.block(0));
-      dealii::LinearAlgebra::distributed::BlockVector<double> temp_vec1(solution_copy);
-      dealii::LinearAlgebra::distributed::BlockVector<double> temp_vec2(solution_copy);
-      temp_vec1 = 0;
-      temp_vec2 = 0;
+//      timer.restart();
+//      unsigned int uzawa_m = 0;
+//      dealii::LinearAlgebra::distributed::Vector<double> P0(solution_copy.block(1));
+//      dealii::LinearAlgebra::distributed::Vector<double> V0(solution_copy.block(0));
+//      dealii::LinearAlgebra::distributed::BlockVector<double> temp_vec1(solution_copy);
+//      dealii::LinearAlgebra::distributed::BlockVector<double> temp_vec2(solution_copy);
+//      temp_vec1 = 0;
+//      temp_vec2 = 0;
 
-      {
-        SolverControl solver_control_V0 (1000, solver_tolerance, true);
-        SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
-                                               solver(solver_control_V0);
-        solver.solve(velocity_matrix,V0,rhs_copy.block(0),prec_A);
-        temp_vec2.block(0) = V0;
-      }
+//      {
+//        SolverControl solver_control_V0 (1000, solver_tolerance, true);
+//        SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
+//                                               solver(solver_control_V0);
+//        solver.solve(velocity_matrix,V0,rhs_copy.block(0),prec_A);
+//        temp_vec2.block(0) = V0;
+//      }
 
-      stokes_matrix.vmult(temp_vec1,temp_vec2);
+//      stokes_matrix.vmult(temp_vec1,temp_vec2);
 
-      dealii::LinearAlgebra::distributed::Vector<double>
-      r0(solution_copy.block(1));
-      dealii::LinearAlgebra::distributed::Vector<double>
-      r1(solution_copy.block(1));
-      r0 = 0;
-      r1 = temp_vec1.block(1);
+//      dealii::LinearAlgebra::distributed::Vector<double>
+//      r0(solution_copy.block(1));
+//      dealii::LinearAlgebra::distributed::Vector<double>
+//      r1(solution_copy.block(1));
+//      r0 = 0;
+//      r1 = temp_vec1.block(1);
 
-      dealii::LinearAlgebra::distributed::Vector<double>
-      z0(solution_copy.block(1));
-      dealii::LinearAlgebra::distributed::Vector<double>
-      z1(solution_copy.block(1));
-      z0 = 0;
-      z1 = 0;
+//      dealii::LinearAlgebra::distributed::Vector<double>
+//      z0(solution_copy.block(1));
+//      dealii::LinearAlgebra::distributed::Vector<double>
+//      z1(solution_copy.block(1));
+//      z0 = 0;
+//      z1 = 0;
 
-      dealii::LinearAlgebra::distributed::Vector<double>
-      s1(solution_copy.block(1));
-      s1 = 0;
+//      dealii::LinearAlgebra::distributed::Vector<double>
+//      s1(solution_copy.block(1));
+//      s1 = 0;
 
-      dealii::LinearAlgebra::distributed::Vector<double>
-      Khats(solution_copy.block(1));
-      Khats = 0;
+//      dealii::LinearAlgebra::distributed::Vector<double>
+//      Khats(solution_copy.block(1));
+//      Khats = 0;
 
-      while (r1.l2_norm() > solver_tolerance)
-        {
-          uzawa_m += 1;
+//      while (r1.l2_norm() > solver_tolerance)
+//        {
+//          uzawa_m += 1;
 
-          prec_S.vmult(z1,r1);
-          if (uzawa_m == 1)
-            s1 = z1;
-          else
-            {
-//            sim.pcout  << "iter: " << uzawa_m << std::endl
-//                       << "z0: " << z0.l2_norm() << std::endl
-//                       << "z1: " << z1.l2_norm() << std::endl
-//                       << "r0: " << r0.l2_norm() << std::endl
-//                       << "r1: " << r1.l2_norm() << std::endl;
+//          prec_S.vmult(z1,r1);
+//          if (uzawa_m == 1)
+//            s1 = z1;
+//          else
+//            {
+////            sim.pcout  << "iter: " << uzawa_m << std::endl
+////                       << "z0: " << z0.l2_norm() << std::endl
+////                       << "z1: " << z1.l2_norm() << std::endl
+////                       << "r0: " << r0.l2_norm() << std::endl
+////                       << "r1: " << r1.l2_norm() << std::endl;
 
-              double beta = (r1*z1)/(r0*z0);
+//              double beta = (r1*z1)/(r0*z0);
 
-              s1.sadd(beta,1.0,z1);
-            }
-          r0 = r1;
-          z0 = z1;
+//              s1.sadd(beta,1.0,z1);
+//            }
+//          r0 = r1;
+//          z0 = z1;
 
-          temp_vec2 = 0;
-          temp_vec2.block(1) = s1;
-          stokes_matrix.vmult(temp_vec1,temp_vec2);
+//          temp_vec2 = 0;
+//          temp_vec2.block(1) = s1;
+//          stokes_matrix.vmult(temp_vec1,temp_vec2);
 
-          SolverControl solver_control_Vk (1000, solver_tolerance, true);
-          SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
-                                                                         solverk(solver_control_Vk);
-          temp_vec2 = 0;
-          solverk.solve(velocity_matrix,temp_vec2.block(0),temp_vec1.block(0),prec_A);
+//          SolverControl solver_control_Vk (1000, solver_tolerance, true);
+//          SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
+//                                                                         solverk(solver_control_Vk);
+//          temp_vec2 = 0;
+//          solverk.solve(velocity_matrix,temp_vec2.block(0),temp_vec1.block(0),prec_A);
 
-          temp_vec2.block(1) = 0;
-          stokes_matrix.vmult(temp_vec1,temp_vec2);
-          //G^Tuk = temp_vec1.block(1)
-          Khats = temp_vec1.block(1);
+//          temp_vec2.block(1) = 0;
+//          stokes_matrix.vmult(temp_vec1,temp_vec2);
+//          //G^Tuk = temp_vec1.block(1)
+//          Khats = temp_vec1.block(1);
 
-          double alpha = (r1*z1)/(s1*Khats);
+//          double alpha = (r1*z1)/(s1*Khats);
 
-          P0.sadd(1.0,alpha,s1);
-          r1.sadd(1.0,-1.0*alpha,Khats);
+//          P0.sadd(1.0,alpha,s1);
+//          r1.sadd(1.0,-1.0*alpha,Khats);
 
-          if (uzawa_m == 100)
-          {
-            uzawa_m = 10000000;
-            break;
-          }
-        }
+//          if (uzawa_m == 100)
+//          {
+//            uzawa_m = 10000000;
+//            break;
+//          }
+//        }
 
-      {
-        temp_vec2 = 0;
-        temp_vec2.block(1) = P0;
-        stokes_matrix.vmult(temp_vec1,temp_vec2);
-        temp_vec1.block(0).sadd(-1.0,1.0,rhs_copy.block(0));
+//      {
+//        temp_vec2 = 0;
+//        temp_vec2.block(1) = P0;
+//        stokes_matrix.vmult(temp_vec1,temp_vec2);
+//        temp_vec1.block(0).sadd(-1.0,1.0,rhs_copy.block(0));
 
-        SolverControl solver_control_V0 (1000, solver_tolerance, true);
-        SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
-                                      solver(solver_control_V0);
-        V0 = 0;
-        solver.solve(velocity_matrix,V0,temp_vec1.block(0),prec_A);
-      }
+//        SolverControl solver_control_V0 (1000, solver_tolerance, true);
+//        SolverCG<dealii::LinearAlgebra::distributed::Vector<double>>
+//                                      solver(solver_control_V0);
+//        V0 = 0;
+//        solver.solve(velocity_matrix,V0,temp_vec1.block(0),prec_A);
+//      }
 
-      solution_copy.block(0) = V0;
-      solution_copy.block(1) = P0;
+//      solution_copy.block(0) = V0;
+//      solution_copy.block(1) = P0;
 
-      stokes_matrix.vmult(temp_vec1,solution_copy);
-      temp_vec1.sadd(-1.0,1.0,rhs_copy);
+//      stokes_matrix.vmult(temp_vec1,solution_copy);
+//      temp_vec1.sadd(-1.0,1.0,rhs_copy);
 
 
-      timer.stop();
-      const double solve_time = timer.last_wall_time();
-      sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s) res = "
-                << temp_vec1.l2_norm() << " <? " << solver_tolerance
-                << std::endl;
-    }
+//      timer.stop();
+//      const double solve_time = timer.last_wall_time();
+//      sim.pcout << "   Uzawa Solved in " << uzawa_m << " iterations (" << solve_time << "s) res = "
+//                << temp_vec1.l2_norm() << " <? " << solver_tolerance
+//                << std::endl;
+//    }
 
 
 
@@ -2043,15 +2079,15 @@ namespace aspect
     sim.pcout << std::endl;
 
 
-    const double fgmres_predict = (1/2)*(fgmres_m)*(fgmres_m+5)*scalar_deal
-                                  + (2*fgmres_m)*matvec
-                                  + (fgmres_m)*prec;
-    sim.pcout << "FGMRES Prediction Timings:         " << fgmres_predict << std::endl;
+//    const double fgmres_predict = (1/2)*(fgmres_m)*(fgmres_m+5)*scalar_deal
+//                                  + (2*fgmres_m)*matvec
+//                                  + (fgmres_m)*prec;
+//    sim.pcout << "FGMRES Prediction Timings:         " << fgmres_predict << std::endl;
 
-    const double bicgstab_predict = 4*bicgstab_m*scalar_deal
-                                    + (1+3*bicgstab_m)*matvec
-                                    + 2*bicgstab_m*prec;
-    sim.pcout << "BiCGStab Prediction Timings:       " << bicgstab_predict << std::endl;
+//    const double idr1_predict = 4*idr1_m*scalar_deal
+//                                    + (1+3*idr1_m)*matvec
+//                                    + 2*idr1_m*prec;
+//    sim.pcout << "IDR(1) Prediction Timings:       " << idr1_predict << std::endl;
 
 
 
