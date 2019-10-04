@@ -1891,7 +1891,7 @@ namespace aspect
 ////      SolverControl solver_control_P (1000, solver_tolerance, true);
 ////      SolverControl solver_control_V (1000, solver_tolerance, true);
 
-//      internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+//      internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
 //      //solution_copy = 0;
 
 //      timer.restart();
