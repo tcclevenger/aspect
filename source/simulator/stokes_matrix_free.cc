@@ -245,8 +245,8 @@ private:
          * or to just apply a single preconditioner step with it.
          */
   const bool do_solve_A;
-  mutable unsigned int n_iterations_A_;
-  mutable unsigned int n_iterations_S_;
+  unsigned int n_iterations_A_;
+  unsigned int n_iterations_S_;
   const double A_block_tolerance;
   const double S_block_tolerance;
 
@@ -374,8 +374,6 @@ vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
       solver.solve(velocity_matrix, dst.block(0), utmp.block(0),
                    a_preconditioner);
       n_iterations_A_ += solver_control.last_step();
-
-      std::cout << solver_control.last_step() << std::endl;
     }
     // if the solver fails, report the error from processor 0 with some additional
     // information about its location, and throw a quiet exception on all other
