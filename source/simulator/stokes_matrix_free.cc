@@ -1975,8 +1975,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       const double solve_time = timer.last_wall_time();
       idr1_m = solver_control_expensive.last_step();
       sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << " : "
-                << preconditioner_expensive.n_iterations_A()/(2.0*idr1_m*2) << " : "
-                << preconditioner_expensive.n_iterations_S()/(2.0*idr1_m*2) << ")."
+                << preconditioner_expensive.n_iterations_A()/(2.0*idr1_m) << " : "
+                << preconditioner_expensive.n_iterations_S()/(2.0*idr1_m) << ")."
                 << std::endl;
     }
     catch (SolverControl::NoConvergence)
