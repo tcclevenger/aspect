@@ -222,7 +222,7 @@ public:
          * Matrix vector product with this preconditioner object.
          */
   void vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
-              const dealii::LinearAlgebra::distributed::BlockVector<double> &src) const;
+              const dealii::LinearAlgebra::distributed::BlockVector<double> &src);
 
   void reset_iterations();
 
@@ -307,7 +307,7 @@ template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, 
 void
 BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, PreconditionerMp, PreconditionerA>::
 vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
-       const dealii::LinearAlgebra::distributed::BlockVector<double>  &src) const
+       const dealii::LinearAlgebra::distributed::BlockVector<double>  &src)
 {
   dealii::LinearAlgebra::distributed::BlockVector<double> utmp(src);
 
