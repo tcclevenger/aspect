@@ -2158,7 +2158,13 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
   //    }
 
 
-
+  const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+      preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                                prec_S, prec_A,
+                                true,
+                                sim.parameters.linear_solver_A_block_tolerance,
+                                sim.parameters.linear_solver_S_block_tolerance,
+                                sim.parameters.use_block_diagonal_preconditioner);
 
   const unsigned int n_scalar = 1000;
   const unsigned int n_matvec = 100;
