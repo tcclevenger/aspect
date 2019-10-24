@@ -1775,7 +1775,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
   solver_control_expensive.enable_history_data();
 
   // create a cheap preconditioner that consists of only a single V-cycle
-  const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+  internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
       preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
                             prec_S, prec_A,
                             false,
@@ -1784,7 +1784,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                             sim.parameters.use_block_diagonal_preconditioner);
 
   // create an expensive preconditioner that solves for the A block with CG
-  const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+  internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
       preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
                                 prec_S, prec_A,
                                 true,
