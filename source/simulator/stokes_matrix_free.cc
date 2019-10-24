@@ -321,8 +321,6 @@ vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
                      dst.block(1), src.block(1),
                      mp_preconditioner);
         n_iterations_S_ += solver_control.last_step();
-
-        std::cout << solver_control.last_step() << std::endl;
       }
       // if the solver fails, report the error from processor 0 with some additional
       // information about its location, and throw a quiet exception on all other
@@ -1918,7 +1916,9 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       fgmres_m = solver_control_expensive.last_step();
-      sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << " : "
+                                                      << preconditioner_expensive.n_iterations_A() << " : "
+                                                      << preconditioner_expensive.n_iterations_S() << ")."
                 << std::endl;
 
       final_linear_residual = solver_control_expensive.last_value();
@@ -1951,7 +1951,9 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr1_m = solver_control_expensive.last_step();
-      sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << " : "
+                << preconditioner_expensive.n_iterations_A() << " : "
+                << preconditioner_expensive.n_iterations_S() << ")."
                 << std::endl;
     }
     catch (SolverControl::NoConvergence)
@@ -1983,7 +1985,9 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr2_m = solver_control_expensive.last_step();
-      sim.pcout << "   IDR(2) Solved in " << idr2_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   IDR(2) Solved in " << idr2_m << " iterations (" << solve_time << " : "
+                << preconditioner_expensive.n_iterations_A() << " : "
+                << preconditioner_expensive.n_iterations_S() << ")."
                 << std::endl;
     }
     catch (SolverControl::NoConvergence)
