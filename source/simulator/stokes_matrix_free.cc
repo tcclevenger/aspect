@@ -224,7 +224,7 @@ public:
   void vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
               const dealii::LinearAlgebra::distributed::BlockVector<double> &src) const;
 
-  unsigned int reset_iterations();
+  void reset_iterations();
 
   unsigned int n_iterations_A() const;
   unsigned int n_iterations_S() const;
@@ -1819,6 +1819,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // FGMRES
     try
     {
+      preconditioner_cheap.reset_iterations();
+
       SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
           solver(solver_control_cheap, mem_fgmres,
                  SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
@@ -1850,6 +1852,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(1)
     try
     {
+      preconditioner_cheap.reset_iterations();
+
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
           solver(solver_control_cheap,mem_idr1,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
@@ -1881,6 +1885,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(2)
     try
     {
+      preconditioner_cheap.reset_iterations();
+
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
           solver(solver_control_cheap,mem_idr2,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
@@ -1915,6 +1921,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // FGMRES
     try
     {
+      preconditioner_expensive.reset_iterations();
+
       SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
           solver(solver_control_expensive, mem_fgmres,
                  SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
@@ -1948,6 +1956,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(1)
     try
     {
+      preconditioner_expensive.reset_iterations();
+
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
           solver(solver_control_expensive,mem_idr1,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
@@ -1981,6 +1991,8 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(2)
     try
     {
+      preconditioner_expensive.reset_iterations();
+
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
           solver(solver_control_expensive,mem_idr2,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
