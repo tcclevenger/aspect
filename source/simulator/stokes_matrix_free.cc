@@ -374,6 +374,8 @@ vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
       solver.solve(velocity_matrix, dst.block(0), utmp.block(0),
                    a_preconditioner);
       n_iterations_A_ += solver_control.last_step();
+
+      std::cout << solver_control.last_step() << std::endl;
     }
     // if the solver fails, report the error from processor 0 with some additional
     // information about its location, and throw a quiet exception on all other
@@ -1936,7 +1938,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       const double solve_time = timer.last_wall_time();
       fgmres_m = solver_control_expensive.last_step();
       sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << " : "
-                << preconditioner_expensive.n_iterations_A()<< " : "
+                << preconditioner_expensive.n_iterations_A()/(1.0*fgmres_m)<< " : "
                 << preconditioner_expensive.n_iterations_S()/(1.0*fgmres_m) << ")."
                 << std::endl;
 
@@ -1973,7 +1975,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       const double solve_time = timer.last_wall_time();
       idr1_m = solver_control_expensive.last_step();
       sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << " : "
-                << preconditioner_expensive.n_iterations_A() << " : "
+                << preconditioner_expensive.n_iterations_A()/(1.0*idr1_m) << " : "
                 << preconditioner_expensive.n_iterations_S()/(1.0*idr1_m) << ")."
                 << std::endl;
     }
@@ -2009,7 +2011,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       const double solve_time = timer.last_wall_time();
       idr2_m = solver_control_expensive.last_step();
       sim.pcout << "   IDR(2) Solved in " << idr2_m << " iterations (" << solve_time << " : "
-                << preconditioner_expensive.n_iterations_A() << " : "
+                << preconditioner_expensive.n_iterations_A()/(1.0*idr2_m) << " : "
                 << preconditioner_expensive.n_iterations_S()/(1.0*idr2_m) << ")."
                 << std::endl;
     }
