@@ -224,6 +224,8 @@ public:
   void vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
               const dealii::LinearAlgebra::distributed::BlockVector<double> &src) const;
 
+  unsigned int reset_iterations();
+
   unsigned int n_iterations_A() const;
   unsigned int n_iterations_S() const;
 
@@ -275,6 +277,15 @@ BlockSchurGMGPreconditioner (const StokesMatrixType  &S,
     S_block_tolerance(S_block_tolerance),
     use_block_diagonal_preconditioner(use_block_diag_prec)
 {}
+
+template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, class PreconditionerMp,class PreconditionerA>
+void
+BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, PreconditionerMp, PreconditionerA>::
+reset_iterations()
+{
+   n_iterations_A_ = 0;
+   n_iterations_S_ = 0;
+}
 
 template <class ABlockMatrixType, class StokesMatrixType, class MassMatrixType, class PreconditionerMp,class PreconditionerA>
 unsigned int
@@ -363,6 +374,8 @@ vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
       solver.solve(velocity_matrix, dst.block(0), utmp.block(0),
                    a_preconditioner);
       n_iterations_A_ += solver_control.last_step();
+
+      std::cout << solver_control.last_step() << std::endl;
     }
     // if the solver fails, report the error from processor 0 with some additional
     // information about its location, and throw a quiet exception on all other
