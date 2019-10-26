@@ -2188,6 +2188,12 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
   //    }
 
 
+  SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                      solver_tolerance, true);
+  SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                        solver_tolerance, true);
+  solver_control_cheap.enable_history_data();
+
   const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
       preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
                                 prec_S, prec_A,
