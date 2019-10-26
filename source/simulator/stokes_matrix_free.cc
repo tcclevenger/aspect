@@ -1753,19 +1753,19 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
   internal::ChangeVectorTypes::copy(rhs_copy,distributed_stokes_rhs);
 
   // create Solver controls for the cheap and expensive solver phase
-  SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                      solver_tolerance, true);
-  SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
-                                          solver_tolerance);
+//  SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+//                                      solver_tolerance, true);
+//  SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+//                                          solver_tolerance);
 
-  solver_control_cheap.enable_history_data();
-  solver_control_expensive.enable_history_data();
+//  solver_control_cheap.enable_history_data();
+//  solver_control_expensive.enable_history_data();
 
 
   sim.pcout << std::endl << std::endl;
-  PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_fgmres;
-  PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_idr1;
-  PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_idr2;
+//  PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_fgmres;
+//  PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_idr1;
+//  PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem_idr2;
 
   // step 1a: try if the simple and fast solver
   // succeeds in n_cheap_stokes_solver_steps steps or less.
@@ -1789,6 +1789,11 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // FGMRES
     try
     {
+      PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                          solver_tolerance, true);
+      solver_control_cheap.enable_history_data();
+
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
           preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
                                 prec_S, prec_A,
@@ -1798,7 +1803,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                 sim.parameters.use_block_diagonal_preconditioner);
 
       SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-          solver(solver_control_cheap, mem_fgmres,
+          solver(solver_control_cheap, mem,
                  SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                  AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
@@ -1828,6 +1833,11 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(1)
     try
     {
+      PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                          solver_tolerance, true);
+      solver_control_cheap.enable_history_data();
+
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
           preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
                                 prec_S, prec_A,
@@ -1837,7 +1847,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                 sim.parameters.use_block_diagonal_preconditioner);
 
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-          solver(solver_control_cheap,mem_idr1,
+          solver(solver_control_cheap,mem,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
 
 
@@ -1867,6 +1877,11 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(2)
     try
     {
+      PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+      SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                          solver_tolerance, true);
+      solver_control_cheap.enable_history_data();
+
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
           preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
                                 prec_S, prec_A,
@@ -1876,7 +1891,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                 sim.parameters.use_block_diagonal_preconditioner);
 
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-          solver(solver_control_cheap,mem_idr2,
+          solver(solver_control_cheap,mem,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
                  AdditionalData(2));
 
@@ -1909,6 +1924,11 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // FGMRES
     try
     {
+      PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+      SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                              solver_tolerance);
+      solver_control_expensive.enable_history_data();
+
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
           preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
                                     prec_S, prec_A,
@@ -1918,7 +1938,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                     sim.parameters.use_block_diagonal_preconditioner);
 
       SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-          solver(solver_control_expensive, mem_fgmres,
+          solver(solver_control_expensive, mem,
                  SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                  AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
@@ -1950,6 +1970,11 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(1)
     try
     {
+      PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+      SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                              solver_tolerance);
+      solver_control_expensive.enable_history_data();
+
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
           preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
                                     prec_S, prec_A,
@@ -1959,7 +1984,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                     sim.parameters.use_block_diagonal_preconditioner);
 
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-          solver(solver_control_expensive,mem_idr1,
+          solver(solver_control_expensive,mem,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
 
 
@@ -1991,6 +2016,11 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(2)
     try
     {
+      PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+      SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                              solver_tolerance);
+      solver_control_expensive.enable_history_data();
+
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
           preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
                                     prec_S, prec_A,
@@ -2000,7 +2030,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                     sim.parameters.use_block_diagonal_preconditioner);
 
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-          solver(solver_control_expensive,mem_idr2,
+          solver(solver_control_expensive,mem,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
                  AdditionalData(2));
 
