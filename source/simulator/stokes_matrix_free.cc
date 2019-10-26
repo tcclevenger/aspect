@@ -1811,7 +1811,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       fgmres_m = solver_control_cheap.last_step();
-      sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   FGMRES Solved in " << fgmres_m << " cheap iterations (" << solve_time << "s)."
                 << std::endl;
 
       final_linear_residual = solver_control_cheap.last_value();
@@ -1852,7 +1852,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr1_m = solver_control_cheap.last_step();
-      sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   IDR(1) Solved in " << idr1_m << " cheap iterations (" << solve_time << "s)."
                 << std::endl;
     }
     catch (SolverControl::NoConvergence)
@@ -1892,7 +1892,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr2_m = solver_control_cheap.last_step();
-      sim.pcout << "   IDR(2) Solved in " << idr2_m << " iterations (" << solve_time << "s)."
+      sim.pcout << "   IDR(2) Solved in " << idr2_m << " cheap iterations (" << solve_time << "s)."
                 << std::endl;
     }
     catch (SolverControl::NoConvergence)
@@ -1931,7 +1931,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       fgmres_m = solver_control_expensive.last_step();
-      sim.pcout << "   FGMRES Solved in " << fgmres_m << " iterations (" << solve_time << " : "
+      sim.pcout << "   FGMRES Solved in " << fgmres_m << " expensive iterations (" << solve_time << " : "
                 << preconditioner_expensive.n_iterations_A()/(1.0*fgmres_m)<< " : "
                 << preconditioner_expensive.n_iterations_S()/(1.0*fgmres_m) << ")."
                 << std::endl;
@@ -1974,7 +1974,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr1_m = solver_control_expensive.last_step();
-      sim.pcout << "   IDR(1) Solved in " << idr1_m << " iterations (" << solve_time << " : "
+      sim.pcout << "   IDR(1) Solved in " << idr1_m << " expensive iterations (" << solve_time << " : "
                 << preconditioner_expensive.n_iterations_A()/(2.0*idr1_m) << " : "
                 << preconditioner_expensive.n_iterations_S()/(2.0*idr1_m) << ")."
                 << std::endl;
@@ -2016,7 +2016,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr2_m = solver_control_expensive.last_step();
-      sim.pcout << "   IDR(2) Solved in " << idr2_m << " iterations (" << solve_time << " : "
+      sim.pcout << "   IDR(2) Solved in " << idr2_m << " expensive iterations (" << solve_time << " : "
                 << preconditioner_expensive.n_iterations_A()/(3.0*idr2_m) << " : "
                 << preconditioner_expensive.n_iterations_S()/(3.0*idr2_m) << ")."
                 << std::endl;
