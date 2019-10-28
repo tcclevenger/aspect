@@ -1,0 +1,59 @@
+-----------------------------------------------------------------------------
+-- This is ASPECT, the Advanced Solver for Problems in Earth's ConvecTion.
+--     . version 2.2.0-pre (krylov_solvers, ab3d495)
+--     . using deal.II 9.2.0-pre (solver_idr, c3cd7e5)
+--     .       with 32 bit indices and vectorization level 2 (256 bits)
+--     . using Trilinos 12.10.1
+--     . using p4est 2.0.0
+--     . running in OPTIMIZED mode
+--     . running with 48 MPI processes
+-----------------------------------------------------------------------------
+
+Vectorization over 4 doubles = 256 bits (AVX), VECTORIZATION_LEVEL=2
+-----------------------------------------------------------------------------
+-- For information on how to cite ASPECT, see:
+--   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=ab3d495&src=code
+-----------------------------------------------------------------------------
+Number of active cells: 32,768 (on 6 levels)
+Number of degrees of freedom: 1,134,437 (823,875+35,937+274,625)
+
+*** Timestep 0:  t=0 seconds
+   Solving Stokes system... 
+
+   FGMRES Solved in 29 expensive iterations (2.85975 : 6.93103 : 2).
+   IDR(1) Solved in 22 expensive iterations (3.43357 : 6.79545 : 1.95455).
+   IDR(2) Solved in 13 expensive iterations (2.97869 : 6.74359 : 1.94872).
+
+Trilinos Scalar Product Timings: 4.49916e-05
+deal.II Scalar Product Timings:  2.72475e-05
+Matrix-vector Product Timings:   0.00072112
+Preconditioner Vmult Timings:    0.016488
+
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.67041
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.36 MB
+     Writing stokes residuals           output-48-1e2-1e-4/stokes_residuals.txt
+
+Termination requested by criterion: end time
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      10.9s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Assemble Stokes system rhs      |         1 |    0.0786s |      0.72% |
+| Initialization                  |         1 |     0.114s |         1% |
+| Postprocessing                  |         1 |   0.00281s |         0% |
+| Setup dof systems               |         1 |     0.655s |         6% |
+| Setup initial conditions        |         1 |     0.077s |      0.71% |
+| Setup matrices                  |         1 |    0.0664s |      0.61% |
+| Solve Stokes system             |         1 |      9.62s |        88% |
++---------------------------------+-----------+------------+------------+
+
+-----------------------------------------------------------------------------
+-- For information on how to cite ASPECT, see:
+--   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=ab3d495&src=code
+-----------------------------------------------------------------------------
