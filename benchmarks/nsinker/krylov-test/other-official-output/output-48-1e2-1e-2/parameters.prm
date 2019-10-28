@@ -7651,7 +7651,7 @@ subsection Mesh refinement
 
   # The number of adaptive refinement steps performed after initial global
   # refinement but while still within the first time step.
-  set Initial adaptive refinement                         = 0
+  set Initial adaptive refinement                         = 3             # default: 0
 
   # The number of global refinement steps performed on the initial coarse
   # mesh, before the problem is first solved there.

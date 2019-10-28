@@ -105,7 +105,7 @@ subsection Solver parameters
   end
 end
 subsection Mesh refinement
-  set Initial adaptive refinement = 2
+  set Initial adaptive refinement = 3
 end
 subsection Material model
   subsection NSinker

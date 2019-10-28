@@ -670,7 +670,7 @@
             "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
         },
         "Initial_20adaptive_20refinement": {
-            "value": "2",
+            "value": "3",
             "default_value": "0",
             "documentation": "The number of adaptive refinement steps performed after initial global refinement but while still within the first time step.",
             "pattern": "52",
