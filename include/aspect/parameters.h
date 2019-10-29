@@ -386,7 +386,7 @@ namespace aspect
      * @{
      */
 
-    const unsigned int visc_power;
+    unsigned int visc_power;
 
 
     typename NonlinearSolver::Kind nonlinear_solver;
