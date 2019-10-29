@@ -1752,18 +1752,9 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
   internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
   internal::ChangeVectorTypes::copy(rhs_copy,distributed_stokes_rhs);
 
-  // create Solver controls for the cheap and expensive solver phase
-//  SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-//                                      solver_tolerance, true);
-//  SolverControl solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
-//                                          solver_tolerance);
-
-//  solver_control_cheap.enable_history_data();
-//  solver_control_expensive.enable_history_data();
-
-
   sim.pcout << std::endl << std::endl;
 
+  // create Solver controls for the cheap and expensive solver phase
   SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
                                       solver_tolerance, true);
   solver_control_cheap.enable_history_data();
@@ -1993,6 +1984,10 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // FGMRES
     try
     {
+      SolverControl actual_solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                              solver_tolerance);
+      actual_solver_control_expensive.enable_history_data();
+
       PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
@@ -2004,7 +1999,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                     sim.parameters.use_block_diagonal_preconditioner);
 
       SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-          solver(solver_control_expensive, mem,
+          solver(actual_solver_control_expensive, mem,
                  SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                  AdditionalData(sim.parameters.stokes_gmres_restart_length));
 
@@ -2016,11 +2011,30 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                     preconditioner_expensive);
       timer.stop();
       const double solve_time = timer.last_wall_time();
-      fgmres_m = solver_control_expensive.last_step();
+      fgmres_m = actual_solver_control_expensive.last_step();
       sim.pcout << "   FGMRES Solved in " << fgmres_m << " expensive iterations (" << solve_time << " : "
                 << preconditioner_expensive.n_iterations_A()/(1.0*fgmres_m)<< " : "
                 << preconditioner_expensive.n_iterations_S()/(1.0*fgmres_m) << ")."
                 << std::endl;
+
+
+      const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+      const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
+      if (rank == 0)
+      {
+      std::ofstream myfile;
+        myfile.open ("reslog-fgmres-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+                     dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+                     dealii::Utilities::int_to_string(stokes_dofs)+"-1e-"+
+                     dealii::Utilities::to_string(sim.parameters.atol_power)+
+                     ".txt");
+        for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
+          myfile << actual_solver_control_expensive.get_history_data()[i] << std::endl;
+        myfile.close();
+      }
+
+
 
       final_linear_residual = solver_control_expensive.last_value();
     }
@@ -2036,6 +2050,10 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(1)
     try
     {
+      SolverControl actual_solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                              solver_tolerance);
+      actual_solver_control_expensive.enable_history_data();
+
       PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
@@ -2047,7 +2065,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                     sim.parameters.use_block_diagonal_preconditioner);
 
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-          solver(solver_control_expensive,mem,
+          solver(actual_solver_control_expensive,mem,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
 
 
@@ -2061,11 +2079,27 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                    preconditioner_expensive);
       timer.stop();
       const double solve_time = timer.last_wall_time();
-      idr1_m = solver_control_expensive.last_step();
+      idr1_m = actual_solver_control_expensive.last_step();
       sim.pcout << "   IDR(1) Solved in " << idr1_m << " expensive iterations (" << solve_time << " : "
                 << preconditioner_expensive.n_iterations_A()/(2.0*idr1_m) << " : "
                 << preconditioner_expensive.n_iterations_S()/(2.0*idr1_m) << ")."
                 << std::endl;
+
+      const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+      const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
+      if (rank == 0)
+      {
+      std::ofstream myfile;
+        myfile.open ("reslog-idr1-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+                     dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+                     dealii::Utilities::int_to_string(stokes_dofs)+"-1e-"+
+                     dealii::Utilities::to_string(sim.parameters.atol_power)+
+                     ".txt");
+        for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
+          myfile << actual_solver_control_expensive.get_history_data()[i] << std::endl;
+        myfile.close();
+      }
     }
     catch (SolverControl::NoConvergence)
     {
@@ -2079,6 +2113,10 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
     // IDR(2)
     try
     {
+      SolverControl actual_solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                              solver_tolerance);
+      actual_solver_control_expensive.enable_history_data();
+
       PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
       const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
@@ -2090,7 +2128,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                                     sim.parameters.use_block_diagonal_preconditioner);
 
       SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-          solver(solver_control_expensive,mem,
+          solver(actual_solver_control_expensive,mem,
                  SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
                  AdditionalData(2));
 
@@ -2105,11 +2143,28 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
                    preconditioner_expensive);
       timer.stop();
       const double solve_time = timer.last_wall_time();
-      idr2_m = solver_control_expensive.last_step();
+      idr2_m = actual_solver_control_expensive.last_step();
       sim.pcout << "   IDR(2) Solved in " << idr2_m << " expensive iterations (" << solve_time << " : "
                 << preconditioner_expensive.n_iterations_A()/(3.0*idr2_m) << " : "
                 << preconditioner_expensive.n_iterations_S()/(3.0*idr2_m) << ")."
                 << std::endl;
+
+
+      const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+      const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
+      if (rank == 0)
+      {
+      std::ofstream myfile;
+        myfile.open ("reslog-idr2-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+                     dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+                     dealii::Utilities::int_to_string(stokes_dofs)+"-1e-"+
+                     dealii::Utilities::to_string(sim.parameters.atol_power)+
+                     ".txt");
+        for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
+          myfile << actual_solver_control_expensive.get_history_data()[i] << std::endl;
+        myfile.close();
+      }
 
 
     }

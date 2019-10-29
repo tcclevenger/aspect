@@ -387,6 +387,7 @@ namespace aspect
      */
 
     unsigned int visc_power;
+    unsigned int atol_power;
 
 
     typename NonlinearSolver::Kind nonlinear_solver;

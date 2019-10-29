@@ -294,6 +294,9 @@ namespace aspect
     prm.declare_entry ("Visc power", "2",
                        Patterns::Integer(0),
                        "Hacked in for residual computations.");
+    prm.declare_entry ("Atol power", "2",
+                       Patterns::Integer(0),
+                       "Hacked in for residual computations.");
 
     prm.declare_entry ("Output directory", "output",
                        Patterns::DirectoryName(),
@@ -1339,6 +1342,7 @@ namespace aspect
       start_time *= year_in_seconds;
 
     visc_power = prm.get_integer("Visc power");
+    atol_power = prm.get_integer("Atol power");
 
     output_directory        = prm.get ("Output directory");
     if (output_directory.size() == 0)
