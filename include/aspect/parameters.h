@@ -385,6 +385,10 @@ namespace aspect
      * @name Global parameters
      * @{
      */
+
+    const unsigned int visc_power;
+
+
     typename NonlinearSolver::Kind nonlinear_solver;
 
     typename AdvectionStabilizationMethod::Kind advection_stabilization_method;
