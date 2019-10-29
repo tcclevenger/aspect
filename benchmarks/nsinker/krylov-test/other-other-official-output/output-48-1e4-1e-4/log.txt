@@ -1,0 +1,133 @@
+-----------------------------------------------------------------------------
+-- This is ASPECT, the Advanced Solver for Problems in Earth's ConvecTion.
+--     . version 2.2.0-pre (krylov_solvers, 0bc3e96)
+--     . using deal.II 9.2.0-pre (solver_idr, 92a866f)
+--     .       with 32 bit indices and vectorization level 2 (256 bits)
+--     . using Trilinos 12.10.1
+--     . using p4est 2.0.0
+--     . running in OPTIMIZED mode
+--     . running with 48 MPI processes
+-----------------------------------------------------------------------------
+
+Vectorization over 4 doubles = 256 bits (AVX), VECTORIZATION_LEVEL=2
+-----------------------------------------------------------------------------
+-- For information on how to cite ASPECT, see:
+--   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=0bc3e96&src=code
+-----------------------------------------------------------------------------
+Number of active cells: 32,768 (on 6 levels)
+Number of degrees of freedom: 1,134,437 (823,875+35,937+274,625)
+
+*** Timestep 0:  t=0 seconds
+   Solving Stokes system... 
+
+   FGMRES Solved in 66 expensive iterations (9.41486 : 15.2424 : 2.89394).
+   IDR(1) Solved in 116 expensive iterations (30.0364 : 14.6466 : 2.2069).
+   IDR(2) Solved in 46 expensive iterations (17.6264 : 14.4348 : 2.18841).
+
+Trilinos Scalar Product Timings: 3.66412e-05
+deal.II Scalar Product Timings:  1.71771e-05
+Matrix-vector Product Timings:   0.000649633
+Preconditioner Vmult Timings:    0.0124692
+
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.67041
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.36 MB
+     Writing stokes residuals           output-48-1e4-1e-4/stokes_residuals.txt
+
+Number of active cells: 65,885 (on 7 levels)
+Number of degrees of freedom: 2,399,591 (1,742,487+76,275+580,829)
+
+*** Timestep 0:  t=0 seconds
+   Solving Stokes system... 
+
+   FGMRES Solved in 67 expensive iterations (32.1695 : 15.209 : 2.95522).
+********************************************************************
+IDR(1) DID NOT CONVERGE AFTER 4294967295 ITERATIONS. res=nan
+********************************************************************
+   IDR(2) Solved in 47 expensive iterations (60.8686 : 14.4894 : 2.29787).
+
+Trilinos Scalar Product Timings: 5.98773e-05
+deal.II Scalar Product Timings:  2.94363e-05
+Matrix-vector Product Timings:   0.00173723
+Preconditioner Vmult Timings:    0.0448973
+
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.55795
+
+
+   Postprocessing:
+     System matrix memory consumption:  0.68 MB
+     Writing stokes residuals           output-48-1e4-1e-4/stokes_residuals.txt
+
+Number of active cells: 133,414 (on 8 levels)
+Number of degrees of freedom: 5,018,112 (3,643,668+159,888+1,214,556)
+
+*** Timestep 0:  t=0 seconds
+   Solving Stokes system... 
+
+   FGMRES Solved in 68 expensive iterations (82.5299 : 15.2647 : 3.01471).
+********************************************************************
+IDR(1) DID NOT CONVERGE AFTER 4294967295 ITERATIONS. res=nan
+********************************************************************
+   IDR(2) Solved in 115 expensive iterations (390.883 : 14.6319 : 2.1942).
+
+Trilinos Scalar Product Timings: 0.000108373
+deal.II Scalar Product Timings:  5.32906e-05
+Matrix-vector Product Timings:   0.0037882
+Preconditioner Vmult Timings:    0.099784
+
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.54529
+
+
+   Postprocessing:
+     System matrix memory consumption:  1.35 MB
+     Writing stokes residuals           output-48-1e4-1e-4/stokes_residuals.txt
+
+Number of active cells: 270,439 (on 9 levels)
+Number of degrees of freedom: 10,136,156 (7,360,842+321,700+2,453,614)
+
+*** Timestep 0:  t=0 seconds
+   Solving Stokes system... 
+
+   FGMRES Solved in 68 expensive iterations (180.29 : 15.4706 : 3).
+********************************************************************
+IDR(1) DID NOT CONVERGE AFTER 4294967295 ITERATIONS. res=nan
+********************************************************************
+   IDR(2) Solved in 101 expensive iterations (790.555 : 15.4752 : 2.23762).
+
+Trilinos Scalar Product Timings: 0.000226605
+deal.II Scalar Product Timings:  0.000186931
+Matrix-vector Product Timings:   0.00781546
+Preconditioner Vmult Timings:    0.207454
+
+      Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.49526
+
+
+   Postprocessing:
+     System matrix memory consumption:  3.12 MB
+     Writing stokes residuals           output-48-1e4-1e-4/stokes_residuals.txt
+
+Termination requested by criterion: end time
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |  3.09e+03s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Assemble Stokes system rhs      |         4 |      1.06s |         0% |
+| Initialization                  |         1 |    0.0447s |         0% |
+| Postprocessing                  |         4 |    0.0107s |         0% |
+| Refine mesh structure, part 1   |         3 |      1.58s |         0% |
+| Refine mesh structure, part 2   |         3 |      1.29s |         0% |
+| Setup dof systems               |         4 |      4.71s |      0.15% |
+| Setup initial conditions        |         4 |      1.56s |         0% |
+| Setup matrices                  |         4 |      1.41s |         0% |
+| Solve Stokes system             |         4 |  3.07e+03s |     1e+02% |
++---------------------------------+-----------+------------+------------+
+
+-----------------------------------------------------------------------------
+-- For information on how to cite ASPECT, see:
+--   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=0bc3e96&src=code
+-----------------------------------------------------------------------------
