@@ -291,7 +291,7 @@ namespace aspect
                        "the general mathematical model.");
 
 
-    prm.declare_entry ("Visc power", 2,
+    prm.declare_entry ("Visc power", "2",
                        Patterns::Integer(0),
                        "Hacked in for residual computations.");
 
