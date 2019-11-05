@@ -1831,7 +1831,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       std::ofstream myfile;
         myfile.open ("reslog-fgmres-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
                      dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                     dealii::Utilities::int_to_string(stokes_dofs)+
+                     dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                      ".txt");
         for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
           myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
@@ -1896,7 +1896,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       std::ofstream myfile;
         myfile.open ("reslog-idr1-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
                      dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                     dealii::Utilities::int_to_string(stokes_dofs)+
+                     dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                      ".txt");
         for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
           myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
@@ -1959,7 +1959,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       std::ofstream myfile;
         myfile.open ("reslog-idr2-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
                      dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                     dealii::Utilities::int_to_string(stokes_dofs)+
+                     dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                      ".txt");
         for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
           myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
@@ -2020,13 +2020,12 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
 
       const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
       const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
       if (rank == 0)
       {
       std::ofstream myfile;
         myfile.open ("reslog-fgmres-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
                      dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                     dealii::Utilities::int_to_string(stokes_dofs)+"-1e-"+
+                     dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+"-1e-"+
                      dealii::Utilities::to_string(sim.parameters.atol_power)+
                      ".txt");
         for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
@@ -2087,13 +2086,12 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
 
       const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
       const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
       if (rank == 0)
       {
       std::ofstream myfile;
         myfile.open ("reslog-idr1-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
                      dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                     dealii::Utilities::int_to_string(stokes_dofs)+"-1e-"+
+                     dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+"-1e-"+
                      dealii::Utilities::to_string(sim.parameters.atol_power)+
                      ".txt");
         for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
@@ -2158,7 +2156,7 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       std::ofstream myfile;
         myfile.open ("reslog-idr2-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
                      dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                     dealii::Utilities::int_to_string(stokes_dofs)+"-1e-"+
+                     dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+"-1e-"+
                      dealii::Utilities::to_string(sim.parameters.atol_power)+
                      ".txt");
         for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
