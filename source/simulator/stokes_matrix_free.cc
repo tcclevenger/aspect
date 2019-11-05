@@ -1818,14 +1818,15 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       fgmres_m = actual_solver_control_cheap.last_step();
-      sim.pcout << "   FGMRES Solved in " << fgmres_m << " cheap iterations (" << solve_time << "s)."
+      sim.pcout << "   FGMRES Solved in " << fgmres_m << " cheap iterations (" << solve_time << " : "
+                << preconditioner_cheap.n_iterations_A()/(1.0*fgmres_m)<< " : "
+                << preconditioner_cheap.n_iterations_S()/(1.0*fgmres_m) << ")."
                 << std::endl;
 
 
 
       const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
       const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
       if (rank == 0)
       {
       std::ofstream myfile;
@@ -1884,13 +1885,13 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr1_m = actual_solver_control_cheap.last_step();
-      sim.pcout << "   IDR(1) Solved in " << idr1_m << " cheap iterations (" << solve_time << "s)."
+      sim.pcout << "   IDR(1) Solved in " << idr1_m << " cheap iterations (" << solve_time << " : "
+                << preconditioner_cheap.n_iterations_A()/(1.0*idr1_m)<< " : "
+                << preconditioner_cheap.n_iterations_S()/(1.0*idr1_m) << ")."
                 << std::endl;
-
 
       const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
       const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
       if (rank == 0)
       {
       std::ofstream myfile;
@@ -1947,13 +1948,14 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
       timer.stop();
       const double solve_time = timer.last_wall_time();
       idr2_m = actual_solver_control_cheap.last_step();
-      sim.pcout << "   IDR(2) Solved in " << idr2_m << " cheap iterations (" << solve_time << "s)."
+      sim.pcout << "   IDR(2) Solved in " << idr2_m << " cheap iterations (" << solve_time << " : "
+                << preconditioner_cheap.n_iterations_A()/(1.0*idr2_m)<< " : "
+                << preconditioner_cheap.n_iterations_S()/(1.0*idr2_m) << ")."
                 << std::endl;
 
 
       const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
       const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
       if (rank == 0)
       {
       std::ofstream myfile;
@@ -2150,7 +2152,6 @@ std::pair<double,double> StokesMatrixFreeHandler<dim>::krylov_solve()
 
       const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
       const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-      const types::global_dof_index stokes_dofs = dof_handler_v.n_dofs() + dof_handler_p.n_dofs();
       if (rank == 0)
       {
       std::ofstream myfile;
