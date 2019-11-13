@@ -530,7 +530,7 @@ namespace aspect
 
     if (parameters.stokes_solver_type == Parameters<dim>::StokesSolverType::block_gmg)
       {
-        return stokes_matrix_free->solve();
+        return stokes_matrix_free->solve(j);
       }
 
     // extract Stokes parts of solution vector, without any ghost elements
@@ -911,6 +911,12 @@ namespace aspect
               }
           }
         stokes_timer.leave_subsection("gmres_solve");
+        gmres_iterations = (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                            solver_control_cheap.last_step() :
+                            0) +
+                           (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                            solver_control_expensive.last_step() :
+                            0);
 
         // signal successful solver
         signals.post_stokes_solver(*this,
@@ -932,56 +938,45 @@ namespace aspect
         solution.block(block_p) = distributed_stokes_solution.block(block_p);
 
         // print the number of iterations to screen
-        if (j==0)
+        pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                  solver_control_cheap.last_step():
+                  0)
+              << '+'
+              << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                  solver_control_expensive.last_step():
+                  0)
+              << " iterations.";
+        pcout << std::endl;
+
+
+        // do some cleanup now that we have the solution
+        if (j==parameters.n_timings)
           {
-            gmres_iterations = (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                                solver_control_cheap.last_step() :
-                                0) +
-                               (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                                solver_control_expensive.last_step() :
-                                0);
-
-            pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                      solver_control_cheap.last_step():
-                      0)
-                  << '+'
-                  << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                      solver_control_expensive.last_step():
-                      0)
-                  << " iterations.";
-            pcout << std::endl;
+            remove_nullspace(solution, distributed_stokes_solution);
+            if (assemble_newton_stokes_system == false)
+              this->last_pressure_normalization_adjustment = normalize_pressure(solution);
           }
+
+        // convert melt pressures:
+        if (parameters.include_melt_transport)
+          melt_handler->compute_melt_variables(solution);
+
+        return std::pair<double,double>(initial_nonlinear_residual,
+                                        final_linear_residual);
       }
 
-
-    // do some cleanup now that we have the solution
-    if (j==parameters.n_timings)
-      {
-        remove_nullspace(solution, distributed_stokes_solution);
-        if (assemble_newton_stokes_system == false)
-          this->last_pressure_normalization_adjustment = normalize_pressure(solution);
-      }
-
-    // convert melt pressures:
-    if (parameters.include_melt_transport)
-      melt_handler->compute_melt_variables(solution);
-
-    return std::pair<double,double>(initial_nonlinear_residual,
-                                    final_linear_residual);
   }
-
-}
 
 
 
 
 
 // explicit instantiation of the functions we implement in this file
-namespace aspect
-{
+  namespace aspect
+  {
 #define INSTANTIATE(dim) \
   template double Simulator<dim>::solve_advection (const AdvectionField &); \
   template std::pair<double,double> Simulator<dim>::solve_stokes (const unsigned int j);
 
-  ASPECT_INSTANTIATE(INSTANTIATE)
-}
+    ASPECT_INSTANTIATE(INSTANTIATE)
+  }

@@ -1786,6 +1786,12 @@ namespace aspect
           }
       }
     sim.stokes_timer.leave_subsection("gmres_solve");
+    sim.gmres_iterations = (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                            solver_control_cheap.last_step() :
+                            0) +
+                           (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                            solver_control_expensive.last_step() :
+                            0);
 
     //signal successful solver
     sim.signals.post_stokes_solver(sim,
@@ -1809,25 +1815,15 @@ namespace aspect
     sim.solution.block(block_p) = distributed_stokes_solution.block(block_p);
 
     // print the number of iterations to screen
-    if (j == 0)
-      {
-        sim.gmres_iterations = (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                                solver_control_cheap.last_step() :
-                                0) +
-                               (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                                solver_control_expensive.last_step() :
-                                0);
-
-        sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                      solver_control_cheap.last_step():
-                      0)
-                  << '+'
-                  << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                      solver_control_expensive.last_step():
-                      0)
-                  << " iterations.";
-        sim.pcout << std::endl;
-      }
+    sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                  solver_control_cheap.last_step():
+                  0)
+              << '+'
+              << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                  solver_control_expensive.last_step():
+                  0)
+              << " iterations.";
+    sim.pcout << std::endl;
 
     // do some cleanup now that we have the solution
     if (j == sim.parameters.n_timings)
