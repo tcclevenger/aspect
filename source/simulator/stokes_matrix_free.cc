@@ -1692,7 +1692,6 @@ namespace aspect
 
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
-    sim.gmres_iterations = 0;
     sim.stokes_timer.enter_subsection("gmres_solve");
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
@@ -1787,7 +1786,6 @@ namespace aspect
           }
       }
     sim.stokes_timer.leave_subsection("gmres_solve");
-    sim.gmres_iterations = solver_control_cheap.last_step() + solver_control_expensive.last_step();
 
     //signal successful solver
     sim.signals.post_stokes_solver(sim,
@@ -1813,6 +1811,8 @@ namespace aspect
     // print the number of iterations to screen
     if (j == 0)
       {
+        sim.gmres_iterations = solver_control_cheap.last_step() + solver_control_expensive.last_step();
+
         sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
                       solver_control_cheap.last_step():
                       0)
