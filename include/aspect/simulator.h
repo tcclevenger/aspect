@@ -68,6 +68,8 @@ DEAL_II_ENABLE_EXTRA_DIAGNOSTICS
 #include <aspect/postprocess/interface.h>
 #include <aspect/adiabatic_conditions/interface.h>
 
+#include <aspect/timer_output.h>
+
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <memory>
@@ -1890,6 +1892,10 @@ namespace aspect
       bool                                                      assemble_newton_stokes_matrix;
       bool                                                      assemble_newton_stokes_system;
       bool                                                      rebuild_stokes_preconditioner;
+
+
+      MyTimerOutput                                             stokes_timer;
+      mutable unsigned int gmres_iterations;
 
       /**
        * @}
