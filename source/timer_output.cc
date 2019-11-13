@@ -29,7 +29,7 @@ namespace aspect
 
     std::vector<std::string> possible_sections {"total_setup", "total_assembly", "gmres_solve", "preconditioner_vmult",
                                                 "setup_sys_dofs", "setup_active_dofs", "setup_mg_dofs", "setup_mf_ops", "setup_mg_transfer",
-                                                "setup_sparsity", "assemble_sys_mat_rhs", "assemble_mf_coef_rhs", "assemble_prec_mat",
+                                                "setup_sparsity", "assemble_sys_mat_rhs", "assemble_mf_obj", "assemble_prec_mat",
                                                 "assemble_amg", "operator_vmult"
                                                };
 
@@ -148,7 +148,7 @@ namespace aspect
 
 
     std::vector<std::string> possible_sections {"total_setup", "total_assembly", "gmres_solve", "preconditioner_vmult",
-                                                "setup_sys_dofs", "setup_mf_dofs", "setup_mg_dofs", "setup_mf_ops", "setup_mg_transfer",
+                                                "setup_sys_dofs", "setup_active_dofs", "setup_mg_dofs", "setup_mf_ops", "setup_mg_transfer",
                                                 "setup_sparsity", "assemble_sys_mat_rhs", "assemble_mf_obj", "assemble_prec_mat",
                                                 "assemble_amg"
                                                };
