@@ -297,7 +297,7 @@ namespace aspect
        * Solves the Stokes linear system matrix-free. This is called
        * by Simulator<dim>::solve_stokes().
        */
-      virtual std::pair<double,double> solve()=0;
+      virtual std::pair<double,double> solve(unsigned int i=0)=0;
 
       /**
        * Allocates and sets up the members of the StokesMatrixFreeHandler. This
@@ -349,7 +349,7 @@ namespace aspect
        * Solves the Stokes linear system matrix-free. This is called
        * by Simulator<dim>::solve_stokes().
        */
-      std::pair<double,double> solve() override;
+      std::pair<double,double> solve(unsigned int i=0) override;
 
       /**
        * Allocates and sets up the members of the StokesMatrixFreeHandler. This
