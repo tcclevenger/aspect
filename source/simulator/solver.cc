@@ -947,36 +947,37 @@ namespace aspect
                   0)
               << " iterations.";
         pcout << std::endl;
-
-
-        // do some cleanup now that we have the solution
-        if (j==parameters.n_timings)
-          {
-            remove_nullspace(solution, distributed_stokes_solution);
-            if (assemble_newton_stokes_system == false)
-              this->last_pressure_normalization_adjustment = normalize_pressure(solution);
-          }
-
-        // convert melt pressures:
-        if (parameters.include_melt_transport)
-          melt_handler->compute_melt_variables(solution);
-
-        return std::pair<double,double>(initial_nonlinear_residual,
-                                        final_linear_residual);
       }
 
+
+    // do some cleanup now that we have the solution
+    if (j==parameters.n_timings)
+      {
+        remove_nullspace(solution, distributed_stokes_solution);
+        if (assemble_newton_stokes_system == false)
+          this->last_pressure_normalization_adjustment = normalize_pressure(solution);
+      }
+
+    // convert melt pressures:
+    if (parameters.include_melt_transport)
+      melt_handler->compute_melt_variables(solution);
+
+    return std::pair<double,double>(initial_nonlinear_residual,
+                                    final_linear_residual);
   }
+
+}
 
 
 
 
 
 // explicit instantiation of the functions we implement in this file
-  namespace aspect
-  {
+namespace aspect
+{
 #define INSTANTIATE(dim) \
   template double Simulator<dim>::solve_advection (const AdvectionField &); \
   template std::pair<double,double> Simulator<dim>::solve_stokes (const unsigned int j);
 
-    ASPECT_INSTANTIATE(INSTANTIATE)
-  }
+  ASPECT_INSTANTIATE(INSTANTIATE)
+}
