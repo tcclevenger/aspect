@@ -379,7 +379,12 @@ namespace aspect
         *initial_nonlinear_residual = compute_initial_stokes_residual();
       }
 
-    const double current_nonlinear_residual = solve_stokes().first;
+    double res = 0;
+    for (unsigned int i=0; i<parameters.n_timings+1; ++i)
+      {
+        res = solve_stokes(i).first;
+      }
+    const double current_nonlinear_residual = res;
 
     current_linearization_point.block(introspection.block_indices.velocities)
       = solution.block(introspection.block_indices.velocities);
