@@ -1414,7 +1414,7 @@ namespace aspect
 
 
   template <int dim, int velocity_degree>
-  std::pair<double,double> StokesMatrixFreeHandlerImplementation<dim,velocity_degree>::solve()
+  std::pair<double,double> StokesMatrixFreeHandlerImplementation<dim,velocity_degree>::solve(unsigned int i)
   {
     double initial_nonlinear_residual = numbers::signaling_nan<double>();
     double final_linear_residual      = numbers::signaling_nan<double>();
@@ -1811,20 +1811,26 @@ namespace aspect
     sim.solution.block(block_p) = distributed_stokes_solution.block(block_p);
 
     // print the number of iterations to screen
-    sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                  solver_control_cheap.last_step():
-                  0)
-              << '+'
-              << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                  solver_control_expensive.last_step():
-                  0)
-              << " iterations.";
-    sim.pcout << std::endl;
+    if (i==0)
+      {
+        sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                      solver_control_cheap.last_step():
+                      0)
+                  << '+'
+                  << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                      solver_control_expensive.last_step():
+                      0)
+                  << " iterations.";
+        sim.pcout << std::endl;
+      }
 
     // do some cleanup now that we have the solution
-    sim.remove_nullspace(sim.solution, distributed_stokes_solution);
-    if (sim.assemble_newton_stokes_system == false)
-      sim.last_pressure_normalization_adjustment = sim.normalize_pressure(sim.solution);
+    if (i == sim.parameters.n_timings)
+      {
+        sim.remove_nullspace(sim.solution, distributed_stokes_solution);
+        if (sim.assemble_newton_stokes_system == false)
+          sim.last_pressure_normalization_adjustment = sim.normalize_pressure(sim.solution);
+      }
 
 
     // convert melt pressures
