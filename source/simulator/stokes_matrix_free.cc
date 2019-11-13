@@ -1811,7 +1811,12 @@ namespace aspect
     // print the number of iterations to screen
     if (j == 0)
       {
-        sim.gmres_iterations = solver_control_cheap.last_step();// + solver_control_expensive.last_step();
+        sim.gmres_iterations = (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                                solver_control_cheap.last_step() :
+                                0) +
+                               (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                                solver_control_expensive.last_step() :
+                                0);
 
         sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
                       solver_control_cheap.last_step():
