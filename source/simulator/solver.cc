@@ -523,7 +523,7 @@ namespace aspect
 
   template <int dim>
   std::pair<double,double>
-  Simulator<dim>::solve_stokes ()
+  Simulator<dim>::solve_stokes (unsigned int j)
   {
     TimerOutput::Scope timer (computing_timer, "Solve Stokes system");
     pcout << "   Solving Stokes system... " << std::flush;
@@ -784,6 +784,40 @@ namespace aspect
                                         parameters.linear_solver_A_block_tolerance,
                                         parameters.linear_solver_S_block_tolerance);
 
+        // Timings for: vcycle
+        {
+          LinearAlgebra::BlockVector tmp_dst = distributed_stokes_solution;
+          LinearAlgebra::BlockVector tmp_scr = distributed_stokes_rhs;
+          preconditioner_cheap.vmult(tmp_dst, tmp_scr);
+          tmp_scr = tmp_dst;
+
+          stokes_timer.enter_subsection("preconditioner_vmult");
+          for (unsigned int j=0; j<5; ++j)
+            {
+              preconditioner_cheap.vmult(tmp_dst, tmp_scr);
+              tmp_scr = tmp_dst;
+            }
+          stokes_timer.leave_subsection("preconditioner_vmult");
+        }
+
+
+        {
+          LinearAlgebra::BlockVector tmp_dst = distributed_stokes_solution;
+          LinearAlgebra::BlockVector tmp_scr = distributed_stokes_rhs;
+          stokes_block.vmult(tmp_dst, tmp_scr);
+          tmp_scr = tmp_dst;
+
+          stokes_timer.enter_subsection("operator_vmult");
+          for (unsigned int j=0; j<10; ++j)
+            {
+              stokes_block.vmult(tmp_dst, tmp_scr);
+              tmp_scr = tmp_dst;
+            }
+          stokes_timer.leave_subsection("operator_vmult");
+        }
+
+        gmres_iterations = 0;
+        stokes_timer.enter_subsection("gmres_solve");
         // step 1a: try if the simple and fast solver
         // succeeds in n_cheap_stokes_solver_steps steps or less.
         try
@@ -877,6 +911,8 @@ namespace aspect
                   }
               }
           }
+        stokes_timer.leave_subsection("gmres_solve");
+        gmres_iterations = solver_control_cheap.last_step() + solver_control_expensive.last_step();
 
         // signal successful solver
         signals.post_stokes_solver(*this,
@@ -898,22 +934,28 @@ namespace aspect
         solution.block(block_p) = distributed_stokes_solution.block(block_p);
 
         // print the number of iterations to screen
-        pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                  solver_control_cheap.last_step():
-                  0)
-              << '+'
-              << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                  solver_control_expensive.last_step():
-                  0)
-              << " iterations.";
-        pcout << std::endl;
+        if (j==0)
+          {
+            pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+                      solver_control_cheap.last_step():
+                      0)
+                  << '+'
+                  << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+                      solver_control_expensive.last_step():
+                      0)
+                  << " iterations.";
+            pcout << std::endl;
+          }
       }
 
 
     // do some cleanup now that we have the solution
-    remove_nullspace(solution, distributed_stokes_solution);
-    if (assemble_newton_stokes_system == false)
-      this->last_pressure_normalization_adjustment = normalize_pressure(solution);
+    if (j==parameters.n_timings)
+      {
+        remove_nullspace(solution, distributed_stokes_solution);
+        if (assemble_newton_stokes_system == false)
+          this->last_pressure_normalization_adjustment = normalize_pressure(solution);
+      }
 
     // convert melt pressures:
     if (parameters.include_melt_transport)

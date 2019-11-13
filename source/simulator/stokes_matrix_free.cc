@@ -1414,7 +1414,7 @@ namespace aspect
 
 
   template <int dim, int velocity_degree>
-  std::pair<double,double> StokesMatrixFreeHandlerImplementation<dim,velocity_degree>::solve(unsigned int i)
+  std::pair<double,double> StokesMatrixFreeHandlerImplementation<dim,velocity_degree>::solve(unsigned int j)
   {
     double initial_nonlinear_residual = numbers::signaling_nan<double>();
     double final_linear_residual      = numbers::signaling_nan<double>();
@@ -1811,7 +1811,7 @@ namespace aspect
     sim.solution.block(block_p) = distributed_stokes_solution.block(block_p);
 
     // print the number of iterations to screen
-    if (i==0)
+    if (j == 0)
       {
         sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
                       solver_control_cheap.last_step():
@@ -1825,7 +1825,7 @@ namespace aspect
       }
 
     // do some cleanup now that we have the solution
-    if (i == sim.parameters.n_timings)
+    if (j == sim.parameters.n_timings)
       {
         sim.remove_nullspace(sim.solution, distributed_stokes_solution);
         if (sim.assemble_newton_stokes_system == false)
