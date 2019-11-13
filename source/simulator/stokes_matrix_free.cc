@@ -1850,7 +1850,7 @@ namespace aspect
   void StokesMatrixFreeHandlerImplementation<dim, velocity_degree>::setup_dofs()
   {
     // Setup active DoFs
-    sim.stokes_timer.enter_subsection("setup_active_dofs");
+    sim.stokes_timer.enter_subsection("setup_active_mf_dofs");
     {
       // Velocity DoFHandler
       {
@@ -1904,7 +1904,7 @@ namespace aspect
         active_coef_dof_vec.reinit(dof_handler_projection.locally_owned_dofs(), sim.triangulation.get_communicator());
       }
     }
-    sim.stokes_timer.leave_subsection("setup_active_dofs");
+    sim.stokes_timer.leave_subsection("setup_active_mf_dofs");
 
 
     // Multigrid DoF setup
