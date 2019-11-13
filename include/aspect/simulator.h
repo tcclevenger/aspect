@@ -804,7 +804,7 @@ namespace aspect
        * <code>source/simulator/solver.cc</code>.
        */
       std::pair<double,double>
-      solve_stokes (unsigned int j = 0);
+      solve_stokes (const unsigned int j = 0);
 
       /**
        * Solve the Stokes system using a block preconditioner and GMG.

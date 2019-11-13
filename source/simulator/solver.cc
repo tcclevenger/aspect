@@ -816,7 +816,6 @@ namespace aspect
           stokes_timer.leave_subsection("operator_vmult");
         }
 
-        gmres_iterations = 0;
         stokes_timer.enter_subsection("gmres_solve");
         // step 1a: try if the simple and fast solver
         // succeeds in n_cheap_stokes_solver_steps steps or less.
@@ -912,7 +911,6 @@ namespace aspect
               }
           }
         stokes_timer.leave_subsection("gmres_solve");
-        gmres_iterations = solver_control_cheap.last_step() + solver_control_expensive.last_step();
 
         // signal successful solver
         signals.post_stokes_solver(*this,
@@ -936,6 +934,8 @@ namespace aspect
         // print the number of iterations to screen
         if (j==0)
           {
+            gmres_iterations = solver_control_cheap.last_step() + solver_control_expensive.last_step();
+
             pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
                       solver_control_cheap.last_step():
                       0)
