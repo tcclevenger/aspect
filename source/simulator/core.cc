@@ -231,7 +231,11 @@ namespace aspect
     assemble_newton_stokes_matrix (true),
     assemble_newton_stokes_system ((parameters.nonlinear_solver == NonlinearSolver::iterated_Advection_and_Newton_Stokes ||
                                     parameters.nonlinear_solver == NonlinearSolver::single_Advection_iterated_Newton_Stokes) ? true : false),
-    rebuild_stokes_preconditioner (true)
+    rebuild_stokes_preconditioner (true),
+
+    stokes_timer(mpi_communicator,
+                 parameters.n_timings,
+                 (parameters.n_timings>0 ? true : false))
   {
     if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
       {
