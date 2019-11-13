@@ -114,7 +114,7 @@ namespace aspect
         const unsigned int indx = (ignore_first ? sections[actual_section_name].n_calls-2 : sections[actual_section_name].n_calls-1)
                                   %(n_timings>0 ? n_timings : 1);
 
-        const double new_time = sections[actual_section_name].timer.last_wall_time();
+        double new_time = sections[actual_section_name].timer.last_wall_time();
         if (actual_section_name == "preconditioner_vmult")
           new_time /= 5;
         else if (actual_section_name == "operator_vmult")
