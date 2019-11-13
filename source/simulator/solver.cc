@@ -523,7 +523,7 @@ namespace aspect
 
   template <int dim>
   std::pair<double,double>
-  Simulator<dim>::solve_stokes (unsigned int j)
+  Simulator<dim>::solve_stokes (const unsigned int j)
   {
     TimerOutput::Scope timer (computing_timer, "Solve Stokes system");
     pcout << "   Solving Stokes system... " << std::flush;
@@ -976,7 +976,7 @@ namespace aspect
 {
 #define INSTANTIATE(dim) \
   template double Simulator<dim>::solve_advection (const AdvectionField &); \
-  template std::pair<double,double> Simulator<dim>::solve_stokes ();
+  template std::pair<double,double> Simulator<dim>::solve_stokes (const unsigned int j);
 
   ASPECT_INSTANTIATE(INSTANTIATE)
 }
