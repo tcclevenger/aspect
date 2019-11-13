@@ -312,6 +312,12 @@ namespace aspect
       virtual void build_preconditioner()=0;
 
       /**
+       * Get the workload imbalance of the distribution
+       * of the level hierarchy.
+       */
+      virtual double get_workload_imbalance()=0;
+
+      /**
        * Declare parameters.
        */
       static
