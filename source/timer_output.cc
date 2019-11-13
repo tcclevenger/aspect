@@ -113,7 +113,13 @@ namespace aspect
         // if we are doing 5 timings, and we hit a 6th timing, assume it should be added to the 1st timing
         const unsigned int indx = (ignore_first ? sections[actual_section_name].n_calls-2 : sections[actual_section_name].n_calls-1)
                                   %(n_timings>0 ? n_timings : 1);
-        sections[actual_section_name].time_vec[indx] += sections[actual_section_name].timer.last_wall_time();
+
+        const double new_time = sections[actual_section_name].timer.last_wall_time();
+        if (actual_section_name == "preconditioner_vmult")
+          new_time /= 5;
+        else if (actual_section_name == "operator_vmult")
+          new_time /= 10;
+        sections[actual_section_name].time_vec[indx] += new_time;
       }
 
 
