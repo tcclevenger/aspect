@@ -367,7 +367,7 @@ namespace aspect
       ConstraintMatrix constraints_projection;
 
       MGLevelObject<ABlockMatrixType> mg_matrices;
-      MGLevelObject<ABlockMatrixType> mg_matrices_mass;
+      MGLevelObject<MassMatrixType> mg_matrices_mass;
       MGConstrainedDoFs              mg_constrained_dofs;
       MGConstrainedDoFs              mg_constrained_dofs_p;
       MGConstrainedDoFs mg_constrained_dofs_projection;
