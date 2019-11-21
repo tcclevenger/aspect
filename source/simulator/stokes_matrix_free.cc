@@ -299,6 +299,7 @@ namespace aspect
            const dealii::LinearAlgebra::distributed::BlockVector<double>  &src) const
     {
       dealii::LinearAlgebra::distributed::BlockVector<double> utmp(src);
+      dealii::LinearAlgebra::distributed::BlockVector<double> ptmp(src);
 
       // first solve with the bottom left block, which we have built
       // as a mass matrix with the inverse of the viscosity
@@ -339,14 +340,20 @@ namespace aspect
 //                    throw QuietException();
 //              }
 //          }
-        mp_preconditioner.vmult(dst.block(1),src.block(1));
+        ptmp = scr;
+        for (unsigned int p=0; p<2; ++p)
+        {
+          mp_preconditioner.vmult(dst.block(1),ptmp.block(1));
+          ptmp.block(1) = dst.block(1);
+        }
+
         dst.block(1) *= -1.0;
       }
 
       {
-        dealii::LinearAlgebra::distributed::BlockVector<double>  dst_tmp(dst);
-        dst_tmp.block(0) = 0.0;
-        stokes_matrix.vmult(utmp, dst_tmp); // B^T
+        ptmp = dst;
+        ptmp.block(0) = 0.0;
+        stokes_matrix.vmult(utmp, ptmp); // B^T
         utmp.block(0) *= -1.0;
         utmp.block(0) += src.block(0);
       }
