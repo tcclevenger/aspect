@@ -84,7 +84,7 @@ namespace aspect
         /**
          * Returns the viscosity table.
          */
-        const Table<2, VectorizedArray<number> > &
+        const Table<1, VectorizedArray<number> > &
         get_viscosity_x_2_table();
 
         /**
@@ -112,9 +112,9 @@ namespace aspect
                           const std::pair<unsigned int, unsigned int> &cell_range) const;
 
         /**
-         * Table which stores the viscosity on each quadrature point.
+         * Table which stores a viscosity value for each cell.
          */
-        Table<2, VectorizedArray<number> > viscosity_x_2;
+        Table<1, VectorizedArray<number> > viscosity_x_2;
 
         /**
          * Pressure scaling constant.
@@ -152,7 +152,8 @@ namespace aspect
         void fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &viscosity_values,
                              const double pressure_scaling,
                              const Triangulation<dim> &tria,
-                             const DoFHandler<dim> &dof_handler_for_projection);
+                             const DoFHandler<dim> &dof_handler_for_projection,
+                             const bool for_mg);
 
 
         /**
@@ -189,9 +190,9 @@ namespace aspect
                                      const std::pair<unsigned int,unsigned int>       &cell_range) const;
 
         /**
-         * Table which stores the viscosity on each quadrature point.
+         * Table which stores a viscosity value for each cell.
          */
-        Table<2, VectorizedArray<number> > one_over_viscosity;
+        Table<1, VectorizedArray<number> > one_over_viscosity;
 
         /**
          * Pressure scaling constant.
@@ -268,9 +269,9 @@ namespace aspect
                                      const std::pair<unsigned int,unsigned int>       &cell_range) const;
 
         /**
-         * Table which stores the viscosity on each quadrature point.
+         * Table which stores a viscosity value for each cell.
          */
-        Table<2, VectorizedArray<number> > viscosity_x_2;
+        Table<1, VectorizedArray<number> > viscosity_x_2;
 
         /**
           * Information on the compressibility of the flow.
@@ -430,14 +431,17 @@ namespace aspect
       ConstraintMatrix constraints_p;
       ConstraintMatrix constraints_projection;
 
-      MGLevelObject<ABlockMatrixType> mg_matrices;
-      MGConstrainedDoFs mg_constrained_dofs;
+      MGLevelObject<ABlockMatrixType> mg_matrices_A;
+      MGLevelObject<ABlockMatrixType> mg_matrices_mass;
+      MGConstrainedDoFs mg_constrained_dofs_A;
+      MGConstrainedDoFs mg_constrained_dofs_mass;
       MGConstrainedDoFs mg_constrained_dofs_projection;
 
       dealii::LinearAlgebra::distributed::Vector<double> active_coef_dof_vec;
       MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_coef_dof_vec;
 
-      MGTransferMatrixFree<dim,double> mg_transfer;
+      MGTransferMatrixFree<dim,double> mg_transfer_A;
+      MGTransferMatrixFree<dim,double> mg_transfer_mass;
   };
 }
 
