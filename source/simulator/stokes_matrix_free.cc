@@ -340,7 +340,7 @@ namespace aspect
 //                    throw QuietException();
 //              }
 //          }
-        ptmp = scr;
+        ptmp = src;
         for (unsigned int p=0; p<2; ++p)
         {
           mp_preconditioner.vmult(dst.block(1),ptmp.block(1));
