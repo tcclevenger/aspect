@@ -2689,7 +2689,7 @@ namespace aspect
           DoFTools::extract_locally_relevant_level_dofs(dof_handler_p, level, relevant_dofs);
           ConstraintMatrix level_constraints;
           level_constraints.reinit(relevant_dofs);
-          level_constraints.add_lines(mg_constrained_dofs_p.get_boundary_indices(level));
+          //level_constraints.add_lines(mg_constrained_dofs_p.get_boundary_indices(level));
           level_constraints.close();
           {
             typename MatrixFree<dim,double>::AdditionalData additional_data;
