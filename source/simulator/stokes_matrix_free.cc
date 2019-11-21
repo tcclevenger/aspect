@@ -1073,6 +1073,7 @@ namespace aspect
         mg_matrices[level].compute_diagonal();
 
         mg_matrices_mass[level].fill_cell_data(level_coef_dof_vec[level],
+                                               sim.pressure_scaling,
                                                sim.triangulation,
                                                dof_handler_projection,
                                                /*for_mg*/ true);
