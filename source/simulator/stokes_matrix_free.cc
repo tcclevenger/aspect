@@ -340,7 +340,7 @@ namespace aspect
 //                    throw QuietException();
 //              }
 //          }
-        for (unsigned int p=0; p<1; ++p)
+        for (unsigned int p=0; p<5; ++p)
         {
           if (p==0)
             ptmp.block(1) = src.block(1);
