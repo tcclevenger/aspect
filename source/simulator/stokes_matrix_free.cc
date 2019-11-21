@@ -1563,11 +1563,11 @@ namespace aspect
     using vector_t = dealii::LinearAlgebra::distributed::Vector<double>;
 
     // We choose a Chebyshev smoother, degree 4
-    typedef PreconditionChebyshev<ABlockMatrixType,vector_t> SmootherType;
-    mg::SmootherRelaxation<SmootherType, vector_t>
+    typedef PreconditionChebyshev<ABlockMatrixType,vector_t> ASmootherType;
+    mg::SmootherRelaxation<ASmootherType, vector_t>
     mg_smoother_A;
     {
-      MGLevelObject<typename SmootherType::AdditionalData> smoother_data;
+      MGLevelObject<typename ASmootherType::AdditionalData> smoother_data;
       smoother_data.resize(0, sim.triangulation.n_global_levels()-1);
       for (unsigned int level = 0; level<sim.triangulation.n_global_levels(); ++level)
         {
@@ -1588,11 +1588,11 @@ namespace aspect
       mg_smoother_A.initialize(mg_matrices, smoother_data);
     }
 
-    typedef PreconditionChebyshev<MassMatrixType,vector_t> SmootherType;
-    mg::SmootherRelaxation<SmootherType, vector_t>
+    typedef PreconditionChebyshev<MassMatrixType,vector_t> MassSmootherType;
+    mg::SmootherRelaxation<MassSmootherType, vector_t>
     mg_smoother_mass;
     {
-      MGLevelObject<typename SmootherType::AdditionalData> smoother_data;
+      MGLevelObject<typename MassSmootherType::AdditionalData> smoother_data;
       smoother_data.resize(0, sim.triangulation.n_global_levels()-1);
       for (unsigned int level = 0; level<sim.triangulation.n_global_levels(); ++level)
         {
