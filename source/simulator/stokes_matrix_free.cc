@@ -1895,13 +1895,14 @@ namespace aspect
                             0);
 
     // print the number of iterations to screen
-    sim.pcout << (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
-                  solver_control_cheap.last_step():
-                  0)
-              << '+'
-              << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
-                  solver_control_expensive.last_step():
-                  0)
+    sim.pcout << sim.gmres_iterations
+//                 (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
+//                  solver_control_cheap.last_step():
+//                  0)
+//              << '+'
+//              << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
+//                  solver_control_expensive.last_step():
+//                  0)
               << " iterations.";
     sim.pcout << std::endl;
 
