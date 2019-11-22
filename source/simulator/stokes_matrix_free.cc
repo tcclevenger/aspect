@@ -627,6 +627,8 @@ namespace aspect
         }
       else
         {
+          //          if (Utilities::MPI::this_mpi_process(src.block(0).get_mpi_communicator()) == 0)
+          //std::cout << "vmult" << std::endl;
           a_preconditioner.vmult (dst.block(0), utmp.block(0));
           n_iterations_A_ += 1;
         }
@@ -1464,7 +1466,7 @@ namespace aspect
             {
               smoother_data[0].smoothing_range = 1e-3;
               smoother_data[0].degree = numbers::invalid_unsigned_int;
-              smoother_data[0].eig_cg_n_iterations = mg_matrices_A[0].m();
+              smoother_data[0].eig_cg_n_iterations = 100; /*mg_matrices_A[0].m();*/
             }
           smoother_data[level].preconditioner = mg_matrices_A[level].get_matrix_diagonal_inverse();
         }
@@ -1490,7 +1492,7 @@ namespace aspect
             {
               smoother_data[0].smoothing_range = 1e-3;
               smoother_data[0].degree = numbers::invalid_unsigned_int;
-              smoother_data[0].eig_cg_n_iterations = mg_matrices_mass[0].m();
+              smoother_data[0].eig_cg_n_iterations = 100; /*mg_matrices_mass[0].m();*/
             }
           smoother_data[level].preconditioner = mg_matrices_mass[level].get_matrix_diagonal_inverse();
         }
@@ -1814,6 +1816,10 @@ namespace aspect
     // it in n_expensive_stokes_solver_steps steps or less.
     catch (const SolverControl::NoConvergence &)
       {
+        sim.pcout << "cheap solver did not converge..." << std::endl;
+
+        if (sim.parameters.n_expensive_stokes_solver_steps<1)
+          throw QuietException();
         // use the value defined by the user
         // OR
         // at least a restart length of 100 for melt models
