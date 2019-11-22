@@ -1798,7 +1798,7 @@ namespace aspect
           }
         else if (sim.parameters.krylov_solver == "idr")
           {
-          sim.pcout << std::setprecision(10) << solution_copy.l2_norm() << std::endl;
+          sim.pcout << std::setprecision(10) << rhs_copy.l2_norm() << std::endl;
 
             SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double> >
             solver(solver_control_cheap, mem,
