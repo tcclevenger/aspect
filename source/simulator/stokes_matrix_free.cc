@@ -1835,6 +1835,7 @@ namespace aspect
     // succeeds in n_cheap_stokes_solver_steps steps or less.
     Timer timer(sim.mpi_communicator,true);
     unsigned int fgmres_m = 0;
+    unsigned int gmres_m = 0;
     unsigned int idr1_m = 0;
     unsigned int idr2_m = 0;
 
@@ -1909,6 +1910,71 @@ namespace aspect
           {
             sim.pcout << "********************************************************************" << std::endl
                       << "FGMRES DID NOT CONVERGE AFTER "
+                      << solver_control_cheap.last_step()
+                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+                      << "********************************************************************" << std::endl;
+          }
+
+        // GMRES
+        try
+          {
+            PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+
+            SolverControl actual_solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+                                                       solver_tolerance, true);
+            actual_solver_control_cheap.enable_history_data();
+
+            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+            preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+                                  prec_S, prec_A,
+                                  false,
+                                  sim.parameters.linear_solver_A_block_tolerance,
+                                  sim.parameters.linear_solver_S_block_tolerance,
+                                  sim.parameters.use_block_diagonal_preconditioner);
+
+            SolverGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
+            solver(actual_solver_control_cheap, mem,
+                   SolverGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+                   AdditionalData(sim.parameters.stokes_gmres_restart_length+2,
+                                  true));
+
+            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+            timer.restart();
+            solver.solve (stokes_matrix,
+                          solution_copy,
+                          rhs_copy,
+                          preconditioner_cheap);
+            timer.stop();
+            const double solve_time = timer.last_wall_time();
+            gmres_m = actual_solver_control_cheap.last_step();
+            sim.pcout << "   GMRES Solved in " << gmres_m << " cheap iterations (" << solve_time << " : "
+                      << preconditioner_cheap.n_iterations_A()/(1.0*gmres_m)<< " : "
+                      << preconditioner_cheap.n_iterations_S()/(1.0*gmres_m) << ")."
+                      << std::endl;
+
+
+
+            const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+            const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+            if (rank == 0)
+              {
+                std::ofstream myfile;
+                myfile.open ("reslog-gmres-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+                             dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+                             dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
+                             ".txt");
+                for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
+                  myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
+                myfile.close();
+              }
+
+
+            final_linear_residual = actual_solver_control_cheap.last_value();
+          }
+        catch (SolverControl::NoConvergence)
+          {
+            sim.pcout << "********************************************************************" << std::endl
+                      << "GMRES DID NOT CONVERGE AFTER "
                       << solver_control_cheap.last_step()
                       << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
                       << "********************************************************************" << std::endl;
@@ -2106,6 +2172,72 @@ namespace aspect
           {
             sim.pcout << "********************************************************************" << std::endl
                       << "FGMRES DID NOT CONVERGE AFTER "
+                      << solver_control_expensive.last_step()
+                      << " ITERATIONS. res=" << solver_control_expensive.last_value() << std::endl
+                      << "********************************************************************" << std::endl;
+          }
+
+        // GMRES
+        try
+          {
+            SolverControl actual_solver_control_expensive (sim.parameters.n_expensive_stokes_solver_steps,
+                                                           solver_tolerance);
+            actual_solver_control_expensive.enable_history_data();
+
+            PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+
+            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+            preconditioner_expensive (stokes_matrix, velocity_matrix, mass_matrix,
+                                      prec_S, prec_A,
+                                      true,
+                                      sim.parameters.linear_solver_A_block_tolerance,
+                                      sim.parameters.linear_solver_S_block_tolerance,
+                                      sim.parameters.use_block_diagonal_preconditioner);
+
+            SolverGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
+            solver(actual_solver_control_expensive, mem,
+                   SolverGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
+                   AdditionalData(sim.parameters.stokes_gmres_restart_length+2,
+                                  true));
+
+            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+            timer.restart();
+            solver.solve (stokes_matrix,
+                          solution_copy,
+                          rhs_copy,
+                          preconditioner_expensive);
+            timer.stop();
+            const double solve_time = timer.last_wall_time();
+            gmres_m = actual_solver_control_expensive.last_step();
+            sim.pcout << "   GMRES Solved in " << gmres_m << " expensive iterations (" << solve_time << " : "
+                      << preconditioner_expensive.n_iterations_A()/(1.0*gmres_m)<< " : "
+                      << preconditioner_expensive.n_iterations_S()/(1.0*gmres_m) << ")."
+                      << std::endl;
+
+
+            const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+            const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+            if (rank == 0)
+              {
+                std::ofstream myfile;
+                myfile.open ("reslog-gmres-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+                             dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+                             dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+"-1e-"+
+                             dealii::Utilities::to_string(sim.parameters.atol_power)+
+                             ".txt");
+                for (unsigned int i=0; i<actual_solver_control_expensive.get_history_data().size(); ++i)
+                  myfile << actual_solver_control_expensive.get_history_data()[i] << std::endl;
+                myfile.close();
+              }
+
+
+
+            final_linear_residual = solver_control_expensive.last_value();
+          }
+        catch (SolverControl::NoConvergence)
+          {
+            sim.pcout << "********************************************************************" << std::endl
+                      << "GMRES DID NOT CONVERGE AFTER "
                       << solver_control_expensive.last_step()
                       << " ITERATIONS. res=" << solver_control_expensive.last_value() << std::endl
                       << "********************************************************************" << std::endl;
@@ -2449,16 +2581,6 @@ namespace aspect
 
     sim.pcout << std::endl;
 
-
-    //    const double fgmres_predict = (1/2)*(fgmres_m)*(fgmres_m+5)*scalar_deal
-    //                                  + (2*fgmres_m)*matvec
-    //                                  + (fgmres_m)*prec;
-    //    sim.pcout << "FGMRES Prediction Timings:         " << fgmres_predict << std::endl;
-
-    //    const double idr1_predict = 4*idr1_m*scalar_deal
-    //                                    + (1+3*idr1_m)*matvec
-    //                                    + 2*idr1_m*prec;
-    //    sim.pcout << "IDR(1) Prediction Timings:       " << idr1_predict << std::endl;
 
 
 
