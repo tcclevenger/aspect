@@ -35,80 +35,152 @@ DEAL_II_NAMESPACE_OPEN
 /*!@addtogroup Solvers */
 /*@{*/
 
+namespace internal
+{
+  /**
+   * A namespace for a helper class to the IDR solver.
+   */
+  namespace SolverIDRImplementation
+  {
+    /**
+     * Class to hold temporary vectors whose size depends on
+     * the solver parameter s.
+     */
+
+    template <typename VectorType>
+    class TmpVectors
+    {
+    public:
+      /**
+       * Constructor. Prepares an array of @p VectorType of length @p
+       * s_param.
+       */
+      TmpVectors(const unsigned int s_param, VectorMemory<VectorType> &vmem);
+
+      /**
+       * Destructor. Delete all allocated vectors.
+       */
+      ~TmpVectors() = default;
+
+      /**
+       * Get vector number @p i. If this vector was unused before, an error
+       * occurs.
+       */
+      VectorType &operator[](const unsigned int i) const;
+
+      /**
+       * Get vector number @p i. Allocate it if necessary.
+       *
+       * If a vector must be allocated, @p temp is used to reinit it to the
+       * proper dimensions.
+       */
+      VectorType &
+      operator()(const unsigned int i, const VectorType &temp);
+
+      /**
+       * Return size of data vector.
+       */
+      unsigned int
+      size() const;
+
+
+    private:
+      /**
+       * Pool where vectors are obtained from.
+       */
+      VectorMemory<VectorType> &mem;
+
+      /**
+       * Field for storing the vectors.
+       */
+      std::vector<typename VectorMemory<VectorType>::Pointer> data;
+    };
+  } // namespace SolverIDRImplementation
+} // namespace internal
+
 /**
- * IDR(s)
+ * This class implements the IDR(s) method used for solving nonsymmetric,
+ * indefinite matrices, developed in <a
+ * href="https://epubs.siam.org/doi/abs/10.1137/070685804">
+ * IDR(s): A Family of Simple and Fast Algorithms for Solving Large
+ * Nonsymmetric Systems of Linear Equations by Martin B. van Gijzen and Peter
+ * Sonneveld </a>. The implementation here is the preconditioned version from <a
+ * href="https://dl.acm.org/citation.cfm?id=2049667">
+ * Algorithm 913: An Elegant IDR(s) Variant that Efficiently Exploits
+ * Biorthogonality Properties
+ * by Martin B. van Gijzen and Peter Sonneveld</a>. The local structure @p AdditionalData takes
+ * the value for the parameter s which can be any integer greater than or equal
+ * to 1. For <code>s=1</code>, this method has similar convergence to BiCGStab.
  *
+ * @note Each iteration of IDR(s) requires <code>s+1</code> preconditioning steps and matrix-vector
+ * products. In this implementation the residual is updated and convergence is
+ * checked after each of these inner steps inside the outer iteration. If the
+ * user enables the history data, the residuals at each of these steps is stored
+ * and therefore there will be multiple values per iteration.
  *
  * @author Conrad Clevenger, 2019
  */
 template <class VectorType = Vector<double>>
 class SolverIDR : public SolverBase<VectorType>
 {
-  public:
-    /**
-     * Structure for storing additional data needed by the solver. Here
-     * it only stores the order s of the IDR(s) method. By default we
-     * set s equal to 2.
-     */
-    struct AdditionalData
-    {
-      explicit AdditionalData(const unsigned int s = 2)
-        : s(s)
-      {}
+public:
+  /**
+   * Structure for storing additional data needed by the solver.
+   */
+  struct AdditionalData
+  {
+    explicit AdditionalData(const unsigned int s = 2)
+      : s(s)
+    {}
 
-      const unsigned int s;
-    };
+    const unsigned int s;
+  };
 
-    /**
-     * Constructor.
-     */
-    SolverIDR(SolverControl            &cn,
-              VectorMemory<VectorType> &mem,
-              const AdditionalData     &data = AdditionalData(2));
+  /**
+   * Constructor.
+   */
+  SolverIDR(SolverControl &           cn,
+            VectorMemory<VectorType> &mem,
+            const AdditionalData &    data = AdditionalData(2));
 
-    /**
-     * Constructor. Use an object of type GrowingVectorMemory as a default to
-     * allocate memory.
-     */
-    SolverIDR(SolverControl &cn, const AdditionalData &data = AdditionalData(2));
+  /**
+   * Constructor. Use an object of type GrowingVectorMemory as a default to
+   * allocate memory.
+   */
+  SolverIDR(SolverControl &cn, const AdditionalData &data = AdditionalData(2));
 
-    /**
-     * Virtual destructor.
-     */
-    virtual ~SolverIDR() override = default;
+  /**
+   * Virtual destructor.
+   */
+  virtual ~SolverIDR() override = default;
 
-    /**
-     * Solve the linear system $Ax=b$ for x.
-     */
-    template <typename MatrixType, typename PreconditionerType>
-    void
-    solve(const MatrixType         &A,
-          VectorType               &x,
-          const VectorType         &b,
-          const PreconditionerType &preconditioner);
+  /**
+   * Solve the linear system $Ax=b$ for x.
+   */
+  template <typename MatrixType, typename PreconditionerType>
+  void
+  solve(const MatrixType &        A,
+        VectorType &              x,
+        const VectorType &        b,
+        const PreconditionerType &preconditioner);
 
-  protected:
-    /**
-     * Interface for derived class. This function gets the current iteration
-     * vector, the residual and the update vector in each step. It can be used
-     * for graphical output of the convergence history.
-     */
-    virtual void
-    print_vectors(const unsigned int step,
-                  const VectorType &x,
-                  const VectorType &r,
-                  const VectorType &d) const;
+protected:
+  /**
+   * Interface for derived class. This function gets the current iteration
+   * vector, the residual and the update vector in each step. It can be used
+   * for graphical output of the convergence history.
+   */
+  virtual void
+  print_vectors(const unsigned int step,
+                const VectorType & x,
+                const VectorType & r,
+                const VectorType & d) const;
 
-  private:
-    /**
-     * Set of s random orthonormalized vectors.
-     */
-    std::vector<VectorType> Q;
-
-    /**
-     * Additional solver parameters.
-     */
-    AdditionalData additional_data;
+private:
+  /**
+   * Additional solver parameters.
+   */
+  AdditionalData additional_data;
 };
 
 /*@}*/
@@ -116,10 +188,63 @@ class SolverIDR : public SolverBase<VectorType>
 
 #ifndef DOXYGEN
 
+
+namespace internal
+{
+  namespace SolverIDRImplementation
+  {
+    template <class VectorType>
+    inline TmpVectors<VectorType>::TmpVectors(const unsigned int        s_param,
+                                              VectorMemory<VectorType> &vmem)
+      : mem(vmem)
+      , data(s_param)
+    {}
+
+
+
+    template <class VectorType>
+    inline VectorType &TmpVectors<VectorType>::
+                       operator[](const unsigned int i) const
+    {
+      Assert(i < data.size(), ExcIndexRange(i, 0, data.size()));
+
+      Assert(data[i] != nullptr, ExcNotInitialized());
+      return *data[i];
+    }
+
+
+
+    template <class VectorType>
+    inline VectorType &
+    TmpVectors<VectorType>::operator()(const unsigned int i,
+                                       const VectorType & temp)
+    {
+      Assert(i < data.size(), ExcIndexRange(i, 0, data.size()));
+      if (data[i] == nullptr)
+        {
+          data[i] = std::move(typename VectorMemory<VectorType>::Pointer(mem));
+          data[i]->reinit(temp);
+        }
+      return *data[i];
+    }
+
+
+
+    template <class VectorType>
+    unsigned int
+    TmpVectors<VectorType>::size() const
+    {
+      return (data.size() > 0 ? data.size() - 1 : 0);
+    }
+  } // namespace SolverIDRImplementation
+} // namespace internal
+
+
+
 template <class VectorType>
-SolverIDR<VectorType>::SolverIDR(SolverControl            &cn,
+SolverIDR<VectorType>::SolverIDR(SolverControl &           cn,
                                  VectorMemory<VectorType> &mem,
-                                 const AdditionalData     &data)
+                                 const AdditionalData &    data)
   : SolverBase<VectorType>(cn, mem)
   , additional_data(data)
 
@@ -149,70 +274,83 @@ SolverIDR<VectorType>::print_vectors(const unsigned int,
 template <class VectorType>
 template <typename MatrixType, typename PreconditionerType>
 void
-SolverIDR<VectorType>::solve(const MatrixType         &A,
-                             VectorType               &x,
-                             const VectorType         &b,
+SolverIDR<VectorType>::solve(const MatrixType &        A,
+                             VectorType &              x,
+                             const VectorType &        b,
                              const PreconditionerType &preconditioner)
 {
+  LogStream::Prefix prefix("IDR(s)");
+
   SolverControl::State iteration_state = SolverControl::iterate;
   unsigned int         step            = 0;
 
   const unsigned int s = additional_data.s;
 
-  // Initial residual
-  VectorType r;
+  // Define temporary vectors whose numbers do not do not
+  // depend on s
+  typename VectorMemory<VectorType>::Pointer r_pointer(this->memory);
+  typename VectorMemory<VectorType>::Pointer v_pointer(this->memory);
+  typename VectorMemory<VectorType>::Pointer vhat_pointer(this->memory);
+  typename VectorMemory<VectorType>::Pointer uhat_pointer(this->memory);
+  typename VectorMemory<VectorType>::Pointer ghat_pointer(this->memory);
+
+  VectorType &r    = *r_pointer;
+  VectorType &v    = *v_pointer;
+  VectorType &vhat = *vhat_pointer;
+  VectorType &uhat = *uhat_pointer;
+  VectorType &ghat = *ghat_pointer;
+
   r.reinit(x, true);
-  A.vmult(r, x);
-  r.sadd(-1.0, 1.0, b);
-
-  // Check for really good initial guess...
-  double res      = r.l2_norm();
-  iteration_state = this->iteration_status(step, res, x);
-  if (iteration_state == SolverControl::success)
-    return;
-
-  // Initialization
-  VectorType v, vhat, uhat, ghat;
   v.reinit(x, true);
   vhat.reinit(x, true);
   uhat.reinit(x, true);
   ghat.reinit(x, true);
 
-  std::vector<VectorType> G(s);
-  std::vector<VectorType> U(s);
-  FullMatrix<double>      M(s, s);
+  // Initial residual
+  A.vmult(r, x);
+  r.sadd(-1.0, 1.0, b);
+
+  // Check for convergent initial guess
+  double res      = r.l2_norm();
+  iteration_state = this->iteration_status(step, res, x);
+  if (iteration_state == SolverControl::success)
+    return;
+
+  // Initialize sets of vectors/matrices whose size dependent on s
+  internal::SolverIDRImplementation::TmpVectors<VectorType> G(s, this->memory);
+  internal::SolverIDRImplementation::TmpVectors<VectorType> U(s, this->memory);
+  internal::SolverIDRImplementation::TmpVectors<VectorType> Q(s, this->memory);
+  FullMatrix<double>                                        M(s, s);
   for (unsigned int i = 0; i < s; ++i)
     {
-      G[i].reinit(x, true);
-      U[i].reinit(x, true);
-      G[i] = 0;
-      U[i] = 0;
+      VectorType &tmp_g = G(i, x);
+      VectorType &tmp_u = U(i, x);
+      tmp_g             = 0;
+      tmp_u             = 0;
+
+      // Compute random set of s orthonormalized vectors Q
+      VectorType &tmp_q = Q(i, x);
+      for (auto indx : tmp_q.locally_owned_elements())
+        tmp_q(indx) = Utilities::generate_normal_random_number(0.0, 1.0);
+      tmp_q.compress(VectorOperation::insert);
+
+      for (unsigned int j = 0; j < i; ++j)
+        {
+          v = Q[j];
+          v *= (v * tmp_q) / (tmp_q * tmp_q);
+          tmp_q.add(-1.0, v);
+        }
+
+      tmp_q *= 1.0 / tmp_q.l2_norm();
 
       M(i, i) = 1.;
     }
+
   double omega = 1.;
 
-  // Compute random set of s orthonormalized vectors Q
-  {
-    Q.resize(s);
-    for (unsigned int i = 0; i < s; ++i)
-      {
-        Q[i].reinit(x, true);
-        for (auto indx : Q[i].locally_owned_elements())
-          Q[i](indx) = Utilities::generate_normal_random_number(0.0, 1.0);
-        Q[i].compress(VectorOperation::insert);
-
-        for (unsigned int j = 0; j < i; ++j)
-          {
-            v = Q[j];
-            v *= (Q[j] * Q[i]) / (Q[i] * Q[i]);
-            Q[i].add(-1.0, v);
-          }
-        Q[i] *= 1.0 / Q[i].l2_norm();
-      }
-  }
-
   bool early_exit = false;
+
+  // Outer iteration
   while (iteration_state == SolverControl::iterate)
     {
       ++step;
@@ -222,9 +360,10 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
       for (unsigned int i = 0; i < s; ++i)
         phi(i) = Q[i] * r;
 
+      // Inner iteration over s
       for (unsigned int k = 0; k < s; ++k)
         {
-          // M(k:s)*gamma = phi(k:s)
+          // Solve M(k:s)*gamma = phi(k:s)
           Vector<double> gamma(s - k);
           {
             Vector<double>            phik(s - k);
@@ -288,7 +427,9 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
             r.add(-1.0 * beta, G[k]);
             x.add(beta, U[k]);
 
-            // Check for early convergence
+            // Check for early convergence. If so, store
+            // information in early_exit so that outer iteration
+            // is broken before recomputing the residual
             res             = r.l2_norm();
             iteration_state = this->iteration_status(step, res, x);
             if (iteration_state != SolverControl::iterate)
