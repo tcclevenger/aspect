@@ -1947,7 +1947,7 @@ namespace aspect
             timer.stop();
             const double solve_time = timer.last_wall_time();
             gmres_m = actual_solver_control_cheap.last_step();
-            sim.pcout << "   GMRES Solved in " << gmres_m << " cheap iterations (" << solve_time << " : "
+            sim.pcout << "   GMRES  Solved in " << gmres_m << " cheap iterations (" << solve_time << " : "
                       << preconditioner_cheap.n_iterations_A()/(1.0*gmres_m)<< " : "
                       << preconditioner_cheap.n_iterations_S()/(1.0*gmres_m) << ")."
                       << std::endl;
@@ -2209,7 +2209,7 @@ namespace aspect
             timer.stop();
             const double solve_time = timer.last_wall_time();
             gmres_m = actual_solver_control_expensive.last_step();
-            sim.pcout << "   GMRES Solved in " << gmres_m << " expensive iterations (" << solve_time << " : "
+            sim.pcout << "   GMRES  Solved in " << gmres_m << " expensive iterations (" << solve_time << " : "
                       << preconditioner_expensive.n_iterations_A()/(1.0*gmres_m)<< " : "
                       << preconditioner_expensive.n_iterations_S()/(1.0*gmres_m) << ")."
                       << std::endl;
