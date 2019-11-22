@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- This is ASPECT, the Advanced Solver for Problems in Earth's ConvecTion.
---     . version 2.2.0-pre (krylov_solvers, afabaf0)
---     . using deal.II 9.2.0-pre (solver_idr, 7cbed2f)
+--     . version 2.2.0-pre (krylov_solvers, a1469a3)
+--     . using deal.II 9.2.0-pre (solver_idr, 1b50d51)
 --     .       with 64 bit indices and vectorization level 2 (256 bits)
 --     . using Trilinos 12.10.1
 --     . using p4est 2.0.0
@@ -12,7 +12,7 @@
 Vectorization over 4 doubles = 256 bits (AVX), VECTORIZATION_LEVEL=2
 -----------------------------------------------------------------------------
 -- For information on how to cite ASPECT, see:
---   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=afabaf0&src=code
+--   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=a1469a3&src=code
 -----------------------------------------------------------------------------
 Number of active cells: 32,768 (on 6 levels)
 Number of degrees of freedom: 1,134,437 (823,875+35,937+274,625)
@@ -20,14 +20,15 @@ Number of degrees of freedom: 1,134,437 (823,875+35,937+274,625)
 *** Timestep 0:  t=0 seconds
    Solving Stokes system... 
 
-   FGMRES Solved in 82 cheap iterations (1.47147 : 1.02439 : 0).
-   IDR(1) Solved in 64 cheap iterations (1.70901 : 2 : 0).
-   IDR(2) Solved in 34 cheap iterations (1.35341 : 3 : 0).
+   FGMRES Solved in 82 cheap iterations (1.49578 : 1.02439 : 0).
+   GMRES  Solved in 83 cheap iterations (1.25314 : 1.0241 : 0).
+   IDR(1) Solved in 64 cheap iterations (1.59466 : 1.98438 : 0).
+   IDR(2) Solved in 34 cheap iterations (1.31954 : 2.97059 : 0).
 
-Trilinos Scalar Product Timings: 5.02311e-05
-deal.II Scalar Product Timings:  1.12202e-05
-Matrix-vector Product Timings:   0.000746866
-Preconditioner Vmult Timings:    0.0113859
+Trilinos Scalar Product Timings: 4.13318e-05
+deal.II Scalar Product Timings:  1.11902e-05
+Matrix-vector Product Timings:   0.000770762
+Preconditioner Vmult Timings:    0.0112158
 
       Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.67041
 
@@ -42,14 +43,15 @@ Number of degrees of freedom: 2,399,854 (1,742,676+76,286+580,892)
 *** Timestep 0:  t=0 seconds
    Solving Stokes system... 
 
-   FGMRES Solved in 86 cheap iterations (4.33406 : 1.02326 : 0).
-   IDR(1) Solved in 57 cheap iterations (4.69516 : 2 : 0).
-   IDR(2) Solved in 33 cheap iterations (4.12376 : 3 : 0).
+   FGMRES Solved in 86 cheap iterations (4.35421 : 1.02326 : 0).
+   GMRES  Solved in 86 cheap iterations (3.95788 : 1.02326 : 0).
+   IDR(1) Solved in 57 cheap iterations (4.6137 : 1.98246 : 0).
+   IDR(2) Solved in 33 cheap iterations (4.04768 : 3 : 0).
 
-Trilinos Scalar Product Timings: 7.7924e-05
-deal.II Scalar Product Timings:  1.99956e-05
-Matrix-vector Product Timings:   0.00194656
-Preconditioner Vmult Timings:    0.0398944
+Trilinos Scalar Product Timings: 8.2756e-05
+deal.II Scalar Product Timings:  1.83344e-05
+Matrix-vector Product Timings:   0.00204012
+Preconditioner Vmult Timings:    0.0375808
 
       Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.55808
 
@@ -64,14 +66,15 @@ Number of degrees of freedom: 5,017,042 (3,642,855+159,902+1,214,285)
 *** Timestep 0:  t=0 seconds
    Solving Stokes system... 
 
-   FGMRES Solved in 87 cheap iterations (10.4753 : 1.02299 : 0).
-   IDR(1) Solved in 53 cheap iterations (10.9336 : 2 : 0).
-   IDR(2) Solved in 36 cheap iterations (11.1411 : 3 : 0).
+   FGMRES Solved in 87 cheap iterations (10.2232 : 1.02299 : 0).
+   GMRES  Solved in 87 cheap iterations (9.70621 : 1.02299 : 0).
+   IDR(1) Solved in 53 cheap iterations (10.7599 : 2 : 0).
+   IDR(2) Solved in 36 cheap iterations (10.8912 : 2.94444 : 0).
 
-Trilinos Scalar Product Timings: 0.000153753
-deal.II Scalar Product Timings:  0.000118758
-Matrix-vector Product Timings:   0.00428986
-Preconditioner Vmult Timings:    0.0972022
+Trilinos Scalar Product Timings: 0.000167077
+deal.II Scalar Product Timings:  0.000108649
+Matrix-vector Product Timings:   0.00429269
+Preconditioner Vmult Timings:    0.0967499
 
       Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.5454
 
@@ -86,14 +89,15 @@ Number of degrees of freedom: 10,131,088 (7,357,179+321,516+2,452,393)
 *** Timestep 0:  t=0 seconds
    Solving Stokes system... 
 
-   FGMRES Solved in 88 cheap iterations (26.2771 : 1.02273 : 0).
-   IDR(1) Solved in 57 cheap iterations (25.9471 : 2 : 0).
-   IDR(2) Solved in 33 cheap iterations (22.6637 : 3 : 0).
+   FGMRES Solved in 88 cheap iterations (22.7551 : 1.02273 : 0).
+   GMRES  Solved in 89 cheap iterations (22.3265 : 1.02247 : 0).
+   IDR(1) Solved in 57 cheap iterations (25.742 : 2 : 0).
+   IDR(2) Solved in 33 cheap iterations (22.638 : 3 : 0).
 
-Trilinos Scalar Product Timings: 0.000405104
-deal.II Scalar Product Timings:  0.000365286
-Matrix-vector Product Timings:   0.00992141
-Preconditioner Vmult Timings:    0.212624
+Trilinos Scalar Product Timings: 0.000395321
+deal.II Scalar Product Timings:  0.000356657
+Matrix-vector Product Timings:   0.0100541
+Preconditioner Vmult Timings:    0.213335
 
       Relative nonlinear residual (Stokes system) after nonlinear iteration 1: 1.49518
 
@@ -106,22 +110,22 @@ Termination requested by criterion: end time
 
 
 +---------------------------------------------+------------+------------+
-| Total wallclock time elapsed since start    |       147s |            |
+| Total wallclock time elapsed since start    |       181s |            |
 |                                             |            |            |
 | Section                         | no. calls |  wall time | % of total |
 +---------------------------------+-----------+------------+------------+
-| Assemble Stokes system rhs      |         4 |       1.1s |      0.75% |
-| Initialization                  |         1 |    0.0569s |         0% |
-| Postprocessing                  |         4 |    0.0172s |         0% |
-| Refine mesh structure, part 1   |         3 |       1.4s |      0.95% |
-| Refine mesh structure, part 2   |         3 |      1.62s |       1.1% |
-| Setup dof systems               |         4 |      4.26s |       2.9% |
-| Setup initial conditions        |         4 |      1.99s |       1.3% |
-| Setup matrices                  |         4 |      1.41s |      0.96% |
-| Solve Stokes system             |         4 |       133s |        90% |
+| Assemble Stokes system rhs      |         4 |      1.09s |      0.61% |
+| Initialization                  |         1 |    0.0422s |         0% |
+| Postprocessing                  |         4 |    0.0175s |         0% |
+| Refine mesh structure, part 1   |         3 |      1.41s |      0.78% |
+| Refine mesh structure, part 2   |         3 |      1.59s |      0.88% |
+| Setup dof systems               |         4 |      4.24s |       2.3% |
+| Setup initial conditions        |         4 |         2s |       1.1% |
+| Setup matrices                  |         4 |      1.36s |      0.75% |
+| Solve Stokes system             |         4 |       166s |        92% |
 +---------------------------------+-----------+------------+------------+
 
 -----------------------------------------------------------------------------
 -- For information on how to cite ASPECT, see:
---   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=afabaf0&src=code
+--   https://aspect.geodynamics.org/citing.html?ver=2.2.0-pre&sha=a1469a3&src=code
 -----------------------------------------------------------------------------
