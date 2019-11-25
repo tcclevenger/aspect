@@ -1886,8 +1886,6 @@ namespace aspect
               }
           }
       }
-    sim.pcout << std::setprecision(10) << solution_copy.l2_norm() << std::endl;
-
     sim.stokes_timer.leave_subsection("krylov_solve");
     sim.gmres_iterations = (solver_control_cheap.last_step() != numbers::invalid_unsigned_int ?
                             solver_control_cheap.last_step() :
