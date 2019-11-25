@@ -338,9 +338,7 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
       // Compute random set of s orthonormalized vectors Q
       VectorType &tmp_q = Q(i, x);
       for (auto indx : tmp_q.locally_owned_elements())
-        {
           tmp_q(indx) = var_nor();/*Utilities::generate_normal_random_number(0.0, 1.0);*/
-        }
       tmp_q.compress(VectorOperation::insert);
 
       for (unsigned int j = 0; j < i; ++j)
