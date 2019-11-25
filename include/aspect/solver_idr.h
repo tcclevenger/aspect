@@ -332,7 +332,7 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
 
       // Compute random set of s orthonormalized vectors Q
       VectorType &tmp_q = Q(i, x);
-      if (i!=0)
+      if (i!=-1)
         {
           for (auto indx : tmp_q.locally_owned_elements())
           {
