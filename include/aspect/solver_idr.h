@@ -327,7 +327,7 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
   boost::mt19937 rng;
   boost::normal_distribution<> nd(0.0, 1.0);
   boost::variate_generator<boost::mt19937 &,
-        boost::normal_distribution<> > var_nor(rng, nd);
+        boost::normal_distribution<> > rand_num(rng, nd);
   for (unsigned int i = 0; i < s; ++i)
     {
       VectorType &tmp_g = G(i, x);
@@ -338,7 +338,7 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
       // Compute random set of s orthonormalized vectors Q
       VectorType &tmp_q = Q(i, x);
       for (auto indx : tmp_q.locally_owned_elements())
-          tmp_q(indx) = var_nor();/*Utilities::generate_normal_random_number(0.0, 1.0);*/
+          tmp_q(indx) = rand_num();/*Utilities::generate_normal_random_number(0.0, 1.0);*/
       tmp_q.compress(VectorOperation::insert);
 
       for (unsigned int j = 0; j < i; ++j)
