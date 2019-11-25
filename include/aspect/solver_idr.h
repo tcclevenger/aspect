@@ -332,11 +332,11 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
 
       // Compute random set of s orthonormalized vectors Q
       VectorType &tmp_q = Q(i, x);
-      if (i!=-1)
+      if (i!=100)
         {
           for (auto indx : tmp_q.locally_owned_elements())
           {
-            boost::mt19937 rng;
+            boost::mt19937 rng(indx);
             boost::normal_distribution<> nd(0.0, 1.0);
             boost::variate_generator<boost::mt19937&,
                                     boost::normal_distribution<> > var_nor(rng, nd);
