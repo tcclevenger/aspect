@@ -323,6 +323,11 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
   internal::SolverIDRImplementation::TmpVectors<VectorType> U(s, this->memory);
   internal::SolverIDRImplementation::TmpVectors<VectorType> Q(s, this->memory);
   FullMatrix<double>                                        M(s, s);
+
+  boost::mt19937 rng;
+  boost::normal_distribution<> nd(0.0, 1.0);
+  boost::variate_generator<boost::mt19937&,
+                          boost::normal_distribution<> > var_nor(rng, nd);
   for (unsigned int i = 0; i < s; ++i)
     {
       VectorType &tmp_g = G(i, x);
@@ -336,11 +341,6 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
         {
           for (auto indx : tmp_q.locally_owned_elements())
           {
-            boost::mt19937 rng(indx);
-            boost::normal_distribution<> nd(0.0, 1.0);
-            boost::variate_generator<boost::mt19937&,
-                                    boost::normal_distribution<> > var_nor(rng, nd);
-
             tmp_q(indx) = var_nor();/*Utilities::generate_normal_random_number(0.0, 1.0);*/
           }
           tmp_q.compress(VectorOperation::insert);
