@@ -28,6 +28,8 @@
 #include <deal.II/lac/solver.h>
 #include <deal.II/lac/solver_control.h>
 
+#include <boost/random.hpp>
+
 #include <cmath>
 
 DEAL_II_NAMESPACE_OPEN
@@ -333,7 +335,14 @@ SolverIDR<VectorType>::solve(const MatrixType         &A,
       if (i!=0)
         {
           for (auto indx : tmp_q.locally_owned_elements())
-            tmp_q(indx) = Utilities::generate_normal_random_number(0.0, 1.0);
+          {
+            boost::mt19937 rng;
+            boost::normal_distribution<> nd(0.0, 1.0);
+            boost::variate_generator<boost::mt19937&,
+                                    boost::normal_distribution<> > var_nor(rng, nd);
+
+            tmp_q(indx) = var_nor();/*Utilities::generate_normal_random_number(0.0, 1.0);*/
+          }
           tmp_q.compress(VectorOperation::insert);
         }
       else
