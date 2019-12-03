@@ -346,6 +346,7 @@ namespace aspect
         dst.block(1) *= -1.0;
       }
 
+      utmp = src;
       if (false){
         ptmp = dst;
         ptmp.block(0) = 0.0;
@@ -388,7 +389,7 @@ namespace aspect
         }
       else
         {
-          a_preconditioner.vmult (dst.block(0), src.block(0));
+          a_preconditioner.vmult (dst.block(0), utmp.block(0));
           //a_preconditioner.vmult (dst.block(0), utmp.block(0));
           n_iterations_A_ += 1;
         }
