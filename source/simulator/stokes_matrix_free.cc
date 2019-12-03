@@ -1942,7 +1942,7 @@ namespace aspect
 
 
           internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-          //solution_copy = 0;
+          solution_copy = 0;
 
           timer.restart();
           solver.solve(stokes_matrix,
