@@ -304,44 +304,44 @@ namespace aspect
       // first solve with the bottom left block, which we have built
       // as a mass matrix with the inverse of the viscosity
       {
-//        SolverControl solver_control(100, src.block(1).l2_norm() * S_block_tolerance,true);
+        SolverControl solver_control(100, src.block(1).l2_norm() * S_block_tolerance,true);
 
-//        SolverCG<dealii::LinearAlgebra::distributed::Vector<double> > solver(solver_control);
-//        // Trilinos reports a breakdown
-//        // in case src=dst=0, even
-//        // though it should return
-//        // convergence without
-//        // iterating. We simply skip
-//        // solving in this case.
-//        if (src.block(1).l2_norm() > 1e-50)
-//          {
-//            try
-//              {
-//                dst.block(1) = 0.0;
-//                solver.solve(mass_matrix,
-//                             dst.block(1), src.block(1),
-//                             mp_preconditioner);
-//                n_iterations_S_ += solver_control.last_step();
-//              }
-//            // if the solver fails, report the error from processor 0 with some additional
-//            // information about its location, and throw a quiet exception on all other
-//            // processors
-//            catch (const std::exception &exc)
-//              {
-//                if (Utilities::MPI::this_mpi_process(src.block(0).get_mpi_communicator()) == 0)
-//                  AssertThrow (false,
-//                               ExcMessage (std::string("The iterative (bottom right) solver in BlockSchurGMGPreconditioner::vmult "
-//                                                       "did not converge to a tolerance of "
-//                                                       + Utilities::to_string(solver_control.tolerance()) +
-//                                                       ". It reported the following error:\n\n")
-//                                           +
-//                                           exc.what()))
-//                  else
-//                    throw QuietException();
-//              }
-//          }
+        SolverCG<dealii::LinearAlgebra::distributed::Vector<double> > solver(solver_control);
+        // Trilinos reports a breakdown
+        // in case src=dst=0, even
+        // though it should return
+        // convergence without
+        // iterating. We simply skip
+        // solving in this case.
+        if (src.block(1).l2_norm() > 1e-50)
+          {
+            try
+              {
+                dst.block(1) = 0.0;
+                solver.solve(mass_matrix,
+                             dst.block(1), src.block(1),
+                             mp_preconditioner);
+                n_iterations_S_ += solver_control.last_step();
+              }
+            // if the solver fails, report the error from processor 0 with some additional
+            // information about its location, and throw a quiet exception on all other
+            // processors
+            catch (const std::exception &exc)
+              {
+                if (Utilities::MPI::this_mpi_process(src.block(0).get_mpi_communicator()) == 0)
+                  AssertThrow (false,
+                               ExcMessage (std::string("The iterative (bottom right) solver in BlockSchurGMGPreconditioner::vmult "
+                                                       "did not converge to a tolerance of "
+                                                       + Utilities::to_string(solver_control.tolerance()) +
+                                                       ". It reported the following error:\n\n")
+                                           +
+                                           exc.what()))
+                  else
+                    throw QuietException();
+              }
+          }
 
-        mp_preconditioner.vmult(dst.block(1),src.block(1));
+        //mp_preconditioner.vmult(dst.block(1),src.block(1));
 
         dst.block(1) *= -1.0;
       }
