@@ -1918,135 +1918,135 @@ namespace aspect
                       << "********************************************************************" << std::endl;
           }
 
-        // IDR(1)
-        try
-          {
-            PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+//        // IDR(1)
+//        try
+//          {
+//            PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
-            SolverControl actual_solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                                       solver_tolerance, true);
-            actual_solver_control_cheap.enable_history_data();
-
-
-            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-            preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                                  prec_S, prec_A,
-                                  false,
-                                  sim.parameters.linear_solver_A_block_tolerance,
-                                  sim.parameters.linear_solver_S_block_tolerance,
-                                  sim.parameters.use_block_diagonal_preconditioner);
-
-            SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                            solver(solver_control_cheap,mem,
-                                                                                   SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
+//            SolverControl actual_solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+//                                                       solver_tolerance, true);
+//            actual_solver_control_cheap.enable_history_data();
 
 
-            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-            //solution_copy = 0;
+//            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+//            preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+//                                  prec_S, prec_A,
+//                                  false,
+//                                  sim.parameters.linear_solver_A_block_tolerance,
+//                                  sim.parameters.linear_solver_S_block_tolerance,
+//                                  sim.parameters.use_block_diagonal_preconditioner);
 
-            timer.restart();
-            solver.solve(stokes_matrix,
-                         solution_copy,
-                         rhs_copy,
-                         preconditioner_cheap);
-            timer.stop();
-            const double solve_time = timer.last_wall_time();
-            idr1_m = solver_control_cheap.last_step();
-            sim.pcout << "   IDR(1) Solved in " << idr1_m << " cheap iterations (" << solve_time << " : "
-                      << preconditioner_cheap.n_iterations_A()/(1.0*idr1_m)<< " : "
-                      << preconditioner_cheap.n_iterations_S()/(1.0*idr1_m) << ")."
-                      << std::endl;
-
-            const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
-            const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-            if (rank == 0)
-              {
-                std::ofstream myfile;
-                myfile.open ("reslog-idr1-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
-                             dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                             dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
-                             ".txt");
-                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
-                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
-                myfile.close();
-              }
-
-          }
-        catch (SolverControl::NoConvergence)
-          {
-            sim.pcout << "********************************************************************" << std::endl
-                      << "IDR(1) DID NOT CONVERGE AFTER "
-                      << solver_control_cheap.last_step()
-                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                      << "********************************************************************" << std::endl;
-          }
-
-        // IDR(2)
-        try
-          {
-            PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
-
-            SolverControl actual_solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
-                                                       solver_tolerance, true);
-            actual_solver_control_cheap.enable_history_data();
-
-            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
-            preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
-                                  prec_S, prec_A,
-                                  false,
-                                  sim.parameters.linear_solver_A_block_tolerance,
-                                  sim.parameters.linear_solver_S_block_tolerance,
-                                  sim.parameters.use_block_diagonal_preconditioner);
-
-            SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                            solver(solver_control_cheap,mem,
-                                                                                   SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
-                                                                                   AdditionalData(2));
+//            SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
+//                                                                            solver(solver_control_cheap,mem,
+//                                                                                   SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
 
 
-            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
-            //solution_copy = 0;
+//            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+//            //solution_copy = 0;
 
-            timer.restart();
-            solver.solve(stokes_matrix,
-                         solution_copy,
-                         rhs_copy,
-                         preconditioner_cheap);
-            timer.stop();
-            const double solve_time = timer.last_wall_time();
-            idr2_m = solver_control_cheap.last_step();
-            sim.pcout << "   IDR(2) Solved in " << idr2_m << " cheap iterations (" << solve_time << " : "
-                      << preconditioner_cheap.n_iterations_A()/(1.0*idr2_m)<< " : "
-                      << preconditioner_cheap.n_iterations_S()/(1.0*idr2_m) << ")."
-                      << std::endl;
+//            timer.restart();
+//            solver.solve(stokes_matrix,
+//                         solution_copy,
+//                         rhs_copy,
+//                         preconditioner_cheap);
+//            timer.stop();
+//            const double solve_time = timer.last_wall_time();
+//            idr1_m = solver_control_cheap.last_step();
+//            sim.pcout << "   IDR(1) Solved in " << idr1_m << " cheap iterations (" << solve_time << " : "
+//                      << preconditioner_cheap.n_iterations_A()/(1.0*idr1_m)<< " : "
+//                      << preconditioner_cheap.n_iterations_S()/(1.0*idr1_m) << ")."
+//                      << std::endl;
+
+//            const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+//            const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+//            if (rank == 0)
+//              {
+//                std::ofstream myfile;
+//                myfile.open ("reslog-idr1-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+//                             dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+//                             dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
+//                             ".txt");
+//                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
+//                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
+//                myfile.close();
+//              }
+
+//          }
+//        catch (SolverControl::NoConvergence)
+//          {
+//            sim.pcout << "********************************************************************" << std::endl
+//                      << "IDR(1) DID NOT CONVERGE AFTER "
+//                      << solver_control_cheap.last_step()
+//                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+//                      << "********************************************************************" << std::endl;
+//          }
+
+//        // IDR(2)
+//        try
+//          {
+//            PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
+
+//            SolverControl actual_solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
+//                                                       solver_tolerance, true);
+//            actual_solver_control_cheap.enable_history_data();
+
+//            const internal::BlockSchurGMGPreconditioner<ABlockMatrixType, StokesMatrixType, MassMatrixType, MassPreconditioner, APreconditioner>
+//            preconditioner_cheap (stokes_matrix, velocity_matrix, mass_matrix,
+//                                  prec_S, prec_A,
+//                                  false,
+//                                  sim.parameters.linear_solver_A_block_tolerance,
+//                                  sim.parameters.linear_solver_S_block_tolerance,
+//                                  sim.parameters.use_block_diagonal_preconditioner);
+
+//            SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
+//                                                                            solver(solver_control_cheap,mem,
+//                                                                                   SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
+//                                                                                   AdditionalData(2));
 
 
-            const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
-            const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
-            if (rank == 0)
-              {
-                std::ofstream myfile;
-                myfile.open ("reslog-idr2-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
-                             dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
-                             dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
-                             ".txt");
-                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
-                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
-                myfile.close();
-              }
+//            internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
+//            //solution_copy = 0;
+
+//            timer.restart();
+//            solver.solve(stokes_matrix,
+//                         solution_copy,
+//                         rhs_copy,
+//                         preconditioner_cheap);
+//            timer.stop();
+//            const double solve_time = timer.last_wall_time();
+//            idr2_m = solver_control_cheap.last_step();
+//            sim.pcout << "   IDR(2) Solved in " << idr2_m << " cheap iterations (" << solve_time << " : "
+//                      << preconditioner_cheap.n_iterations_A()/(1.0*idr2_m)<< " : "
+//                      << preconditioner_cheap.n_iterations_S()/(1.0*idr2_m) << ")."
+//                      << std::endl;
+
+
+//            const unsigned int rank = dealii::Utilities::MPI::this_mpi_process(sim.mpi_communicator);
+//            const unsigned int total_ranks = dealii::Utilities::MPI::n_mpi_processes(sim.mpi_communicator);
+//            if (rank == 0)
+//              {
+//                std::ofstream myfile;
+//                myfile.open ("reslog-idr2-"+dealii::Utilities::int_to_string(total_ranks)+"-1e"+
+//                             dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
+//                             dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
+//                             ".txt");
+//                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
+//                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
+//                myfile.close();
+//              }
 
 
 
 
-          }
-        catch (SolverControl::NoConvergence)
-          {
-            sim.pcout << "********************************************************************" << std::endl
-                      << "IDR(2) DID NOT CONVERGE AFTER "
-                      << solver_control_cheap.last_step()
-                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
-                      << "********************************************************************" << std::endl;
-          }
+//          }
+//        catch (SolverControl::NoConvergence)
+//          {
+//            sim.pcout << "********************************************************************" << std::endl
+//                      << "IDR(2) DID NOT CONVERGE AFTER "
+//                      << solver_control_cheap.last_step()
+//                      << " ITERATIONS. res=" << solver_control_cheap.last_value() << std::endl
+//                      << "********************************************************************" << std::endl;
+//          }
       }
     else if (sim.parameters.n_expensive_stokes_solver_steps > 0)
       {
