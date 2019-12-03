@@ -346,7 +346,7 @@ namespace aspect
         dst.block(1) *= -1.0;
       }
 
-      if (0){
+      if (false){
         ptmp = dst;
         ptmp.block(0) = 0.0;
         stokes_matrix.vmult(utmp, ptmp); // B^T
@@ -1871,7 +1871,7 @@ namespace aspect
                                   sim.parameters.use_block_diagonal_preconditioner);
 
             SolverGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
-            solver(actual_solver_control_cheap, mem,
+            solver(solver_control_cheap, mem,
                    SolverGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                    AdditionalData(sim.parameters.stokes_gmres_restart_length+2,
                                   true));
@@ -1884,7 +1884,7 @@ namespace aspect
                           preconditioner_cheap);
             timer.stop();
             const double solve_time = timer.last_wall_time();
-            gmres_m = actual_solver_control_cheap.last_step();
+            gmres_m = solver_control_cheap.last_step();
             sim.pcout << "   GMRES  Solved in " << gmres_m << " cheap iterations (" << solve_time << " : "
                       << preconditioner_cheap.n_iterations_A()/(1.0*gmres_m)<< " : "
                       << preconditioner_cheap.n_iterations_S()/(1.0*gmres_m) << ")."
@@ -1901,13 +1901,13 @@ namespace aspect
                              dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
                              dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                              ".txt");
-                for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
-                  myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
+                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
+                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
                 myfile.close();
               }
 
 
-            final_linear_residual = actual_solver_control_cheap.last_value();
+            final_linear_residual = solver_control_cheap.last_value();
           }
         catch (SolverControl::NoConvergence)
           {
@@ -1936,7 +1936,7 @@ namespace aspect
                                 sim.parameters.use_block_diagonal_preconditioner);
 
           SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double> >
-          solver(actual_solver_control_cheap, mem,
+          solver(solver_control_cheap, mem,
                  SolverMinRes<dealii::LinearAlgebra::distributed::BlockVector<double> >::
                  AdditionalData());
 
@@ -1948,7 +1948,7 @@ namespace aspect
                         preconditioner_cheap);
           timer.stop();
           const double solve_time = timer.last_wall_time();
-          minres_m = actual_solver_control_cheap.last_step();
+          minres_m = solver_control_cheap.last_step();
           sim.pcout << "   MinRES Solved in " << minres_m << " cheap iterations (" << solve_time << " : "
                     << preconditioner_cheap.n_iterations_A()/(1.0*minres_m)<< " : "
                     << preconditioner_cheap.n_iterations_S()/(1.0*minres_m) << ")."
@@ -1965,13 +1965,13 @@ namespace aspect
                            dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
                            dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                            ".txt");
-              for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
-                myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
+              for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
+                myfile << solver_control_cheap.get_history_data()[i] << std::endl;
               myfile.close();
             }
 
 
-          final_linear_residual = actual_solver_control_cheap.last_value();
+          final_linear_residual = solver_control_cheap.last_value();
         }
       catch (SolverControl::NoConvergence)
         {
@@ -2001,7 +2001,7 @@ namespace aspect
                                   sim.parameters.use_block_diagonal_preconditioner);
 
             SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                            solver(actual_solver_control_cheap,mem,
+                                                                            solver(solver_control_cheap,mem,
                                                                                    SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::AdditionalData(1));
 
 
@@ -2015,7 +2015,7 @@ namespace aspect
                          preconditioner_cheap);
             timer.stop();
             const double solve_time = timer.last_wall_time();
-            idr1_m = actual_solver_control_cheap.last_step();
+            idr1_m = solver_control_cheap.last_step();
             sim.pcout << "   IDR(1) Solved in " << idr1_m << " cheap iterations (" << solve_time << " : "
                       << preconditioner_cheap.n_iterations_A()/(1.0*idr1_m)<< " : "
                       << preconditioner_cheap.n_iterations_S()/(1.0*idr1_m) << ")."
@@ -2030,8 +2030,8 @@ namespace aspect
                              dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
                              dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                              ".txt");
-                for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
-                  myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
+                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
+                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
                 myfile.close();
               }
 
@@ -2063,7 +2063,7 @@ namespace aspect
                                   sim.parameters.use_block_diagonal_preconditioner);
 
             SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>
-                                                                            solver(actual_solver_control_cheap,mem,
+                                                                            solver(solver_control_cheap,mem,
                                                                                    SolverIDR<dealii::LinearAlgebra::distributed::BlockVector<double>>::
                                                                                    AdditionalData(2));
 
@@ -2078,7 +2078,7 @@ namespace aspect
                          preconditioner_cheap);
             timer.stop();
             const double solve_time = timer.last_wall_time();
-            idr2_m = actual_solver_control_cheap.last_step();
+            idr2_m = solver_control_cheap.last_step();
             sim.pcout << "   IDR(2) Solved in " << idr2_m << " cheap iterations (" << solve_time << " : "
                       << preconditioner_cheap.n_iterations_A()/(1.0*idr2_m)<< " : "
                       << preconditioner_cheap.n_iterations_S()/(1.0*idr2_m) << ")."
@@ -2094,8 +2094,8 @@ namespace aspect
                              dealii::Utilities::int_to_string(sim.parameters.visc_power)+"-"+
                              dealii::Utilities::int_to_string(sim.triangulation.n_global_levels())+
                              ".txt");
-                for (unsigned int i=0; i<actual_solver_control_cheap.get_history_data().size(); ++i)
-                  myfile << actual_solver_control_cheap.get_history_data()[i] << std::endl;
+                for (unsigned int i=0; i<solver_control_cheap.get_history_data().size(); ++i)
+                  myfile << solver_control_cheap.get_history_data()[i] << std::endl;
                 myfile.close();
               }
 
