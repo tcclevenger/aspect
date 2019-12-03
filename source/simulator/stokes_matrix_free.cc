@@ -343,7 +343,7 @@ namespace aspect
 
         mp_preconditioner.vmult(dst.block(1),src.block(1));
 
-        //dst.block(1) *= -1.0;
+        dst.block(1) *= -1.0;
       }
 
       if (0){
