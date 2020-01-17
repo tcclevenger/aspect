@@ -466,7 +466,6 @@ namespace aspect
                 << n_dofs_per_proc[p] << "   "
                 << constant_modes_size[p] << std::endl;
 
-
       if (parameters.include_melt_transport)
         Mp_preconditioner = std_cxx14::make_unique<LinearAlgebra::PreconditionAMG>();
       else
@@ -478,6 +477,7 @@ namespace aspect
 #ifdef ASPECT_USE_PETSC
       Amg_data.symmetric_operator = false;
 #else
+      if (dof_handler.n_locally_owned_dofs() != 0)
       Amg_data.constant_modes = constant_modes;
       Amg_data.elliptic = true;
       Amg_data.higher_order_elements = true;
