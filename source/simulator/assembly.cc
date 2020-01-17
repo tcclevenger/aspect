@@ -477,7 +477,7 @@ namespace aspect
 #ifdef ASPECT_USE_PETSC
       Amg_data.symmetric_operator = false;
 #else
-      //if (dof_handler.n_locally_owned_dofs() != 0)
+      if (dof_handler.n_locally_owned_dofs() != 0)
         Amg_data.constant_modes = constant_modes;
       Amg_data.elliptic = true;
       Amg_data.higher_order_elements = true;
