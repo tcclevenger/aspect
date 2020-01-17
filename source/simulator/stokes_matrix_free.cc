@@ -1771,7 +1771,10 @@ namespace aspect
         if (sim.parameters.n_cheap_stokes_solver_steps == 0)
           throw SolverControl::NoConvergence(0,0);
 
-        sim.pcout << sim.parameters.krylov_solver << ": ";
+        sim.pcout << sim.parameters.krylov_solver;
+        if (sim.parameters.krylov_solver == "idr")
+          sim.pcout << "(" << sim.parameters.idr_s_value << ")";
+        sim.pcout << ": ";
 
         if (sim.parameters.krylov_solver == "fgmres")
           {
