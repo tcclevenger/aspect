@@ -1315,7 +1315,7 @@ namespace aspect
       std::vector<types::global_dof_index> n_dofs_per_proc
           = dof_handler.compute_n_locally_owned_dofs_per_processor();
       if (this_proc == 0)
-        for (p=0; p<nprocs; ++p)
+        for (unsigned int p=0; p<nprocs; ++p)
           pcout << p << ": " << n_dofs_per_proc[p] << std::endl;
 
 
