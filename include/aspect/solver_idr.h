@@ -50,42 +50,42 @@ namespace internal
     template <typename VectorType>
     class TmpVectors
     {
-    public:
-      /**
-       * Constructor. Prepares an array of @p VectorType of length @p s_param.
-       */
-      TmpVectors(const unsigned int s_param, VectorMemory<VectorType> &vmem);
+      public:
+        /**
+         * Constructor. Prepares an array of @p VectorType of length @p s_param.
+         */
+        TmpVectors(const unsigned int s_param, VectorMemory<VectorType> &vmem);
 
-      /**
-       * Destructor. Delete all allocated vectors.
-       */
-      ~TmpVectors() = default;
+        /**
+         * Destructor. Delete all allocated vectors.
+         */
+        ~TmpVectors() = default;
 
-      /**
-       * Get vector number @p i. If this vector was unused before, an error
-       * occurs.
-       */
-      VectorType &operator[](const unsigned int i) const;
+        /**
+         * Get vector number @p i. If this vector was unused before, an error
+         * occurs.
+         */
+        VectorType &operator[](const unsigned int i) const;
 
-      /**
-       * Get vector number @p i. Allocate it if necessary.
-       *
-       * If a vector must be allocated, @p temp is used to reinit it to the
-       * proper dimensions.
-       */
-      VectorType &
-      operator()(const unsigned int i, const VectorType &temp);
+        /**
+         * Get vector number @p i. Allocate it if necessary.
+         *
+         * If a vector must be allocated, @p temp is used to reinit it to the
+         * proper dimensions.
+         */
+        VectorType &
+        operator()(const unsigned int i, const VectorType &temp);
 
-    private:
-      /**
-       * Pool where vectors are obtained from.
-       */
-      VectorMemory<VectorType> &mem;
+      private:
+        /**
+         * Pool where vectors are obtained from.
+         */
+        VectorMemory<VectorType> &mem;
 
-      /**
-       * Field for storing the vectors.
-       */
-      std::vector<typename VectorMemory<VectorType>::Pointer> data;
+        /**
+         * Field for storing the vectors.
+         */
+        std::vector<typename VectorMemory<VectorType>::Pointer> data;
     };
   } // namespace SolverIDRImplementation
 } // namespace internal
@@ -117,68 +117,68 @@ namespace internal
 template <class VectorType = Vector<double>>
 class SolverIDR : public SolverBase<VectorType>
 {
-public:
-  /**
-   * Structure for storing additional data needed by the solver.
-   */
-  struct AdditionalData
-  {
+  public:
     /**
-     * Constructor. By default, an IDR(2) method is used.
+     * Structure for storing additional data needed by the solver.
      */
-    explicit AdditionalData(const unsigned int s = 2)
-      : s(s)
-    {}
+    struct AdditionalData
+    {
+      /**
+       * Constructor. By default, an IDR(2) method is used.
+       */
+      explicit AdditionalData(const unsigned int s = 2)
+        : s(s)
+      {}
 
-    const unsigned int s;
-  };
+      const unsigned int s;
+    };
 
-  /**
-   * Constructor.
-   */
-  SolverIDR(SolverControl &           cn,
-            VectorMemory<VectorType> &mem,
-            const AdditionalData &    data = AdditionalData());
+    /**
+     * Constructor.
+     */
+    SolverIDR(SolverControl            &cn,
+              VectorMemory<VectorType> &mem,
+              const AdditionalData     &data = AdditionalData());
 
-  /**
-   * Constructor. Use an object of type GrowingVectorMemory as a default to
-   * allocate memory.
-   */
-  explicit SolverIDR(SolverControl &       cn,
-                     const AdditionalData &data = AdditionalData());
+    /**
+     * Constructor. Use an object of type GrowingVectorMemory as a default to
+     * allocate memory.
+     */
+    explicit SolverIDR(SolverControl        &cn,
+                       const AdditionalData &data = AdditionalData());
 
-  /**
-   * Virtual destructor.
-   */
-  virtual ~SolverIDR() override = default;
+    /**
+     * Virtual destructor.
+     */
+    virtual ~SolverIDR() override = default;
 
-  /**
-   * Solve the linear system <code>Ax=b</code> for x.
-   */
-  template <typename MatrixType, typename PreconditionerType>
-  void
-  solve(const MatrixType &        A,
-        VectorType &              x,
-        const VectorType &        b,
-        const PreconditionerType &preconditioner);
+    /**
+     * Solve the linear system <code>Ax=b</code> for x.
+     */
+    template <typename MatrixType, typename PreconditionerType>
+    void
+    solve(const MatrixType         &A,
+          VectorType               &x,
+          const VectorType         &b,
+          const PreconditionerType &preconditioner);
 
-protected:
-  /**
-   * Interface for derived class. This function gets the current iteration
-   * vector, the residual and the update vector in each step. It can be used
-   * for graphical output of the convergence history.
-   */
-  virtual void
-  print_vectors(const unsigned int step,
-                const VectorType & x,
-                const VectorType & r,
-                const VectorType & d) const;
+  protected:
+    /**
+     * Interface for derived class. This function gets the current iteration
+     * vector, the residual and the update vector in each step. It can be used
+     * for graphical output of the convergence history.
+     */
+    virtual void
+    print_vectors(const unsigned int step,
+                  const VectorType &x,
+                  const VectorType &r,
+                  const VectorType &d) const;
 
-private:
-  /**
-   * Additional solver parameters.
-   */
-  AdditionalData additional_data;
+  private:
+    /**
+     * Additional solver parameters.
+     */
+    AdditionalData additional_data;
 };
 
 /*@}*/
@@ -202,7 +202,7 @@ namespace internal
 
     template <class VectorType>
     inline VectorType &TmpVectors<VectorType>::
-                       operator[](const unsigned int i) const
+    operator[](const unsigned int i) const
     {
       Assert(i < data.size(), ExcIndexRange(i, 0, data.size()));
 
@@ -215,7 +215,7 @@ namespace internal
     template <class VectorType>
     inline VectorType &
     TmpVectors<VectorType>::operator()(const unsigned int i,
-                                       const VectorType & temp)
+                                       const VectorType &temp)
     {
       AssertIndexRange(i, data.size());
       if (data[i] == nullptr)
@@ -231,9 +231,9 @@ namespace internal
 
 
 template <class VectorType>
-SolverIDR<VectorType>::SolverIDR(SolverControl &           cn,
+SolverIDR<VectorType>::SolverIDR(SolverControl            &cn,
                                  VectorMemory<VectorType> &mem,
-                                 const AdditionalData &    data)
+                                 const AdditionalData     &data)
   : SolverBase<VectorType>(cn, mem)
   , additional_data(data)
 {}
@@ -261,9 +261,9 @@ SolverIDR<VectorType>::print_vectors(const unsigned int,
 template <class VectorType>
 template <typename MatrixType, typename PreconditionerType>
 void
-SolverIDR<VectorType>::solve(const MatrixType &        A,
-                             VectorType &              x,
-                             const VectorType &        b,
+SolverIDR<VectorType>::solve(const MatrixType         &A,
+                             VectorType               &x,
+                             const VectorType         &b,
                              const PreconditionerType &preconditioner)
 {
   LogStream::Prefix prefix("IDR(s)");
