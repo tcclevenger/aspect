@@ -9,6 +9,6 @@ tasks=$(($nodes * $tt))
 echo "nodes=$nodes tpn=$tt tasks=$tasks"
 #JJ="-j"
 
-sed "s/&NODES&/$nodes/g" run.r5.base | sed "s/&TASKS&/$tasks/g" > run.r5.$nodes
+sed "s/&NODES&/$nodes/g" run.r6.base | sed "s/&TASKS&/$tasks/g" > run.r6.$nodes
 
 done
