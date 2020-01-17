@@ -9,19 +9,16 @@
 
 . ./setup-env.sh || exit 1
 
-
-
 echo "MatrixFree, 4 sinkers, 1e4 visc jump"
 TMPPRM=temp.prm.$SLURM_JOB_ID
 
-for refinement in 6 7 8 9 10 11; do # 4 5 6 7
+for refinement in 6 7 8 9 10; do # 4 5 6 7
 
   cp global_mf.prm $TMPPRM
 
 echo "subsection Solver parameters" >> $TMPPRM
 echo "  subsection Stokes solver parameters" >> $TMPPRM
-echo "    set Krylov solver = idr" >> $TMPPRM
-echo "    set IDR(s) s value = 2" >> $TMPPRM
+echo "    set Krylov solver = gmres" >> $TMPPRM
 echo "  end" >> $TMPPRM
 echo "end" >> $TMPPRM
 
@@ -39,8 +36,8 @@ echo "subsection Postprocess" >> $TMPPRM
 echo "  set List of postprocessors = memory statistics" >> $TMPPRM
 echo "end" >> $TMPPRM
 
-echo "set Output directory = output-frontera/r5-r$refinement-n$SLURM_JOB_NUM_NODES/" >> $TMPPRM
-echo "set Timing output directory = output-frontera/r5-r$refinement-n$SLURM_JOB_NUM_NODES/" >> $TMPPRM
+echo "set Output directory = output-frontera/r6-r$refinement-n$SLURM_JOB_NUM_NODES/" >> $TMPPRM
+echo "set Timing output directory = output-frontera/r6-r$refinement-n$SLURM_JOB_NUM_NODES/" >> $TMPPRM
 
 ibrun ./aspect $TMPPRM
 rm $TMPPRM
