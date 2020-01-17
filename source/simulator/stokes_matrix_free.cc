@@ -1807,7 +1807,6 @@ namespace aspect
                           solution_copy,
                           rhs_copy,
                           preconditioner_cheap);
-            sim.pcout << std::setprecision(10) << solution_copy.l2_norm() << std::endl;
           }
 
         final_linear_residual = solver_control_cheap.last_value();

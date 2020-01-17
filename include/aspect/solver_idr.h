@@ -28,6 +28,8 @@
 #include <deal.II/lac/solver.h>
 #include <deal.II/lac/solver_control.h>
 
+#include <boost/random.hpp>
+
 #include <cmath>
 
 DEAL_II_NAMESPACE_OPEN
@@ -38,7 +40,7 @@ DEAL_II_NAMESPACE_OPEN
 namespace internal
 {
   /**
-   * A namespace for a helper class to the IDR solver.
+   * A namespace for a helper class to the IDR(s) solver.
    */
   namespace SolverIDRImplementation
   {
@@ -46,14 +48,12 @@ namespace internal
      * Class to hold temporary vectors whose size depends on
      * the solver parameter s.
      */
-
     template <typename VectorType>
     class TmpVectors
     {
     public:
       /**
-       * Constructor. Prepares an array of @p VectorType of length @p
-       * s_param.
+       * Constructor. Prepares an array of @p VectorType of length @p s_param.
        */
       TmpVectors(const unsigned int s_param, VectorMemory<VectorType> &vmem);
 
@@ -100,7 +100,7 @@ namespace internal
 
 /**
  * This class implements the IDR(s) method used for solving nonsymmetric,
- * indefinite matrices, developed in <a
+ * indefinite linear systems, developed in <a
  * href="https://epubs.siam.org/doi/abs/10.1137/070685804">
  * IDR(s): A Family of Simple and Fast Algorithms for Solving Large
  * Nonsymmetric Systems of Linear Equations by Martin B. van Gijzen and Peter
@@ -115,7 +115,7 @@ namespace internal
  * @note Each iteration of IDR(s) requires <code>s+1</code> preconditioning steps and matrix-vector
  * products. In this implementation the residual is updated and convergence is
  * checked after each of these inner steps inside the outer iteration. If the
- * user enables the history data, the residuals at each of these steps is stored
+ * user enables the history data, the residual at each of these steps is stored
  * and therefore there will be multiple values per iteration.
  *
  * @author Conrad Clevenger, 2019
@@ -155,7 +155,7 @@ public:
   virtual ~SolverIDR() override = default;
 
   /**
-   * Solve the linear system $Ax=b$ for x.
+   * Solve the linear system <code>Ax=b</code> for x.
    */
   template <typename MatrixType, typename PreconditionerType>
   void
@@ -321,6 +321,13 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
   internal::SolverIDRImplementation::TmpVectors<VectorType> U(s, this->memory);
   internal::SolverIDRImplementation::TmpVectors<VectorType> Q(s, this->memory);
   FullMatrix<double>                                        M(s, s);
+
+  // Random number generator for vector entries of
+  // Q (normal distirbution, mean=0 sigma=1)
+  boost::mt19937               rng;
+  boost::normal_distribution<> nd(0.0, 1.0);
+  boost::variate_generator<boost::mt19937 &, boost::normal_distribution<>>
+    rand_num(rng, nd);
   for (unsigned int i = 0; i < s; ++i)
     {
       VectorType &tmp_g = G(i, x);
@@ -329,10 +336,19 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
       tmp_u             = 0;
 
       // Compute random set of s orthonormalized vectors Q
+      // Note: the first vector is chosen to be the initial
+      // residual to match BiCGStab (as is done in comparisons
+      // with BiCGStab in the papers listed in the documentation
+      // of this function)
       VectorType &tmp_q = Q(i, x);
-      for (auto indx : tmp_q.locally_owned_elements())
-        tmp_q(indx) = Utilities::generate_normal_random_number(0.0, 1.0);
-      tmp_q.compress(VectorOperation::insert);
+      if (i != 0)
+        {
+          for (auto indx : tmp_q.locally_owned_elements())
+            tmp_q(indx) = rand_num();
+          tmp_q.compress(VectorOperation::insert);
+        }
+      else
+        tmp_q = r;
 
       for (unsigned int j = 0; j < i; ++j)
         {
@@ -341,7 +357,8 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
           tmp_q.add(-1.0, v);
         }
 
-      tmp_q *= 1.0 / tmp_q.l2_norm();
+      if (i != 0)
+        tmp_q *= 1.0 / tmp_q.l2_norm();
 
       M(i, i) = 1.;
     }
