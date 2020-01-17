@@ -1771,6 +1771,8 @@ namespace aspect
         if (sim.parameters.n_cheap_stokes_solver_steps == 0)
           throw SolverControl::NoConvergence(0,0);
 
+        sim.pcout << sim.parameters.krylov_solver << ": ";
+
         if (sim.parameters.krylov_solver == "fgmres")
           {
             SolverFGMRES<dealii::LinearAlgebra::distributed::BlockVector<double> >
@@ -1781,7 +1783,7 @@ namespace aspect
             solver.solve (stokes_matrix,
                           solution_copy,
                           rhs_copy,
-                          preconditioner_cheap);
+                          preconditioner_cheap);            
           }
         else if (sim.parameters.krylov_solver == "gmres")
           {
@@ -1816,7 +1818,7 @@ namespace aspect
     // it in n_expensive_stokes_solver_steps steps or less.
     catch (const SolverControl::NoConvergence &)
       {
-        sim.pcout << "cheap solver did not converge..." << std::endl;
+        sim.pcout << "fgmres: " << std::endl;
 
         if (sim.parameters.n_expensive_stokes_solver_steps<1)
           throw QuietException();
