@@ -455,9 +455,16 @@ namespace aspect
       const unsigned int nprocs = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
       const unsigned int this_proc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
 
-      pcout << this_proc << ": "
-            << dof_handler.n_locally_owned_dofs() << "   "
-            << constant_modes.size() << std::endl;
+      std::vector<types::global_dof_index> n_dofs_per_proc
+        = dof_handler.compute_n_locally_owned_dofs_per_processor();
+      std::vector<unsigned int> constant_modes_size
+        = dealii::Utilities::MPI::gather<unsigned int>(mpi_communicator,constant_modes.size(),0);
+
+      if (this_proc==0)
+        for (unsigned int p=0; p<nprocs; ++p)
+          pcout << p << ": "
+                << n_dofs_per_proc[p] << "   "
+                << constant_modes_size[p] << std::endl;
 
 
       if (parameters.include_melt_transport)

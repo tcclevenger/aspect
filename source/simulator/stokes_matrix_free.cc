@@ -1786,7 +1786,7 @@ namespace aspect
             solver.solve (stokes_matrix,
                           solution_copy,
                           rhs_copy,
-                          preconditioner_cheap);            
+                          preconditioner_cheap);
           }
         else if (sim.parameters.krylov_solver == "gmres")
           {
