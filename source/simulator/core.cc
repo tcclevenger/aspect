@@ -1308,6 +1308,22 @@ namespace aspect
     {
       dof_handler.distribute_dofs(finite_element);
 
+
+      const unsigned int nprocs = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
+      const unsigned int this_proc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
+
+      std::vector<types::global_dof_index> n_dofs_per_proc
+          = dof_handler.compute_n_locally_owned_dofs_per_processor();
+      if (this_proc == 0)
+        for (p=0; p<nprocs; ++p)
+          pcout << p << ": " << n_dofs_per_proc[p] << std::endl;
+
+
+
+
+
+
+
       // Renumber the DoFs hierarchical so that we get the
       // same numbering if we resume the computation. This
       // is because the numbering depends on the order the
