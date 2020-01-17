@@ -452,6 +452,14 @@ namespace aspect
                                         introspection.component_masks.velocities,
                                         constant_modes);
 
+      const unsigned int nprocs = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
+      const unsigned int this_proc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
+
+      pcout << this_proc << ": "
+            << dof_handler.n_locally_owned_dofs() << "   "
+            << constant_modes.size() << std::endl;
+
+
       if (parameters.include_melt_transport)
         Mp_preconditioner = std_cxx14::make_unique<LinearAlgebra::PreconditionAMG>();
       else
