@@ -24,13 +24,12 @@
 #include <deal.II/base/subscriptor.h>
 #include <deal.II/base/utilities.h>
 
-#include <deal.II/lac/lapack_full_matrix.h>
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver.h>
 #include <deal.II/lac/solver_control.h>
 
-#include <boost/random.hpp>
-
 #include <cmath>
+#include <random>
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -77,13 +76,6 @@ namespace internal
       VectorType &
       operator()(const unsigned int i, const VectorType &temp);
 
-      /**
-       * Return size of data vector.
-       */
-      unsigned int
-      size() const;
-
-
     private:
       /**
        * Pool where vectors are obtained from.
@@ -108,15 +100,17 @@ namespace internal
  * href="https://dl.acm.org/citation.cfm?id=2049667">
  * Algorithm 913: An Elegant IDR(s) Variant that Efficiently Exploits
  * Biorthogonality Properties
- * by Martin B. van Gijzen and Peter Sonneveld</a>. The local structure @p AdditionalData takes
- * the value for the parameter s which can be any integer greater than or equal
- * to 1. For <code>s=1</code>, this method has similar convergence to BiCGStab.
+ * by Martin B. van Gijzen and Peter Sonneveld</a>. The local structure
+ * @p AdditionalData takes the value for the parameter s which can be any
+ * integer greater than or equal to 1. For <code>s=1</code>, this method has
+ * similar convergence to BiCGStab.
  *
- * @note Each iteration of IDR(s) requires <code>s+1</code> preconditioning steps and matrix-vector
- * products. In this implementation the residual is updated and convergence is
- * checked after each of these inner steps inside the outer iteration. If the
- * user enables the history data, the residual at each of these steps is stored
- * and therefore there will be multiple values per iteration.
+ * @note Each iteration of IDR(s) requires <code>s+1</code> preconditioning steps
+ * and matrix-vector products. In this implementation the residual is updated
+ * and convergence is checked after each of these inner steps inside the outer
+ * iteration. If the user enables the history data, the residual at each of
+ * these steps is stored and therefore there will be multiple values per
+ * iteration.
  *
  * @author Conrad Clevenger, 2019
  */
@@ -129,6 +123,9 @@ public:
    */
   struct AdditionalData
   {
+    /**
+     * Constructor. By default, an IDR(2) method is used.
+     */
     explicit AdditionalData(const unsigned int s = 2)
       : s(s)
     {}
@@ -141,13 +138,14 @@ public:
    */
   SolverIDR(SolverControl &           cn,
             VectorMemory<VectorType> &mem,
-            const AdditionalData &    data = AdditionalData(2));
+            const AdditionalData &    data = AdditionalData());
 
   /**
    * Constructor. Use an object of type GrowingVectorMemory as a default to
    * allocate memory.
    */
-  SolverIDR(SolverControl &cn, const AdditionalData &data = AdditionalData(2));
+  explicit SolverIDR(SolverControl &       cn,
+                     const AdditionalData &data = AdditionalData());
 
   /**
    * Virtual destructor.
@@ -219,22 +217,13 @@ namespace internal
     TmpVectors<VectorType>::operator()(const unsigned int i,
                                        const VectorType & temp)
     {
-      Assert(i < data.size(), ExcIndexRange(i, 0, data.size()));
+      AssertIndexRange(i, data.size());
       if (data[i] == nullptr)
         {
           data[i] = std::move(typename VectorMemory<VectorType>::Pointer(mem));
           data[i]->reinit(temp);
         }
       return *data[i];
-    }
-
-
-
-    template <class VectorType>
-    unsigned int
-    TmpVectors<VectorType>::size() const
-    {
-      return (data.size() > 0 ? data.size() - 1 : 0);
     }
   } // namespace SolverIDRImplementation
 } // namespace internal
@@ -247,7 +236,6 @@ SolverIDR<VectorType>::SolverIDR(SolverControl &           cn,
                                  const AdditionalData &    data)
   : SolverBase<VectorType>(cn, mem)
   , additional_data(data)
-
 {}
 
 
@@ -256,7 +244,6 @@ template <class VectorType>
 SolverIDR<VectorType>::SolverIDR(SolverControl &cn, const AdditionalData &data)
   : SolverBase<VectorType>(cn)
   , additional_data(data)
-
 {}
 
 
@@ -286,8 +273,7 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
 
   const unsigned int s = additional_data.s;
 
-  // Define temporary vectors whose numbers do not do not
-  // depend on s
+  // Define temporary vectors which do not do not depend on s
   typename VectorMemory<VectorType>::Pointer r_pointer(this->memory);
   typename VectorMemory<VectorType>::Pointer v_pointer(this->memory);
   typename VectorMemory<VectorType>::Pointer vhat_pointer(this->memory);
@@ -323,11 +309,9 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
   FullMatrix<double>                                        M(s, s);
 
   // Random number generator for vector entries of
-  // Q (normal distirbution, mean=0 sigma=1)
-  boost::mt19937               rng;
-  boost::normal_distribution<> nd(0.0, 1.0);
-  boost::variate_generator<boost::mt19937 &, boost::normal_distribution<>>
-    rand_num(rng, nd);
+  // Q (normal distribution, mean=0 sigma=1)
+  std::mt19937               rng;
+  std::normal_distribution<> normal_distribution(0.0, 1.0);
   for (unsigned int i = 0; i < s; ++i)
     {
       VectorType &tmp_g = G(i, x);
@@ -344,7 +328,7 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
       if (i != 0)
         {
           for (auto indx : tmp_q.locally_owned_elements())
-            tmp_q(indx) = rand_num();
+            tmp_q(indx) = normal_distribution(rng);
           tmp_q.compress(VectorOperation::insert);
         }
       else
@@ -387,37 +371,31 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
             FullMatrix<double>        Mk(s - k, s - k);
             std::vector<unsigned int> indices;
             unsigned int              j = 0;
-            for (unsigned int i = k; i < s; ++i)
+            for (unsigned int i = k; i < s; ++i, ++j)
               {
                 indices.push_back(i);
                 phik(j) = phi(i);
-                ++j;
               }
             Mk.extract_submatrix_from(M, indices, indices);
 
-            Mk.gauss_jordan();
-            Mk.vmult(gamma, phik);
+            FullMatrix<double> Mk_inv(s - k, s - k);
+            Mk_inv.invert(Mk);
+            Mk_inv.vmult(gamma, phik);
           }
 
           {
             v = r;
 
             unsigned int j = 0;
-            for (unsigned int i = k; i < s; ++i)
-              {
-                v.add(-1.0 * gamma(j), G[i]);
-                ++j;
-              }
+            for (unsigned int i = k; i < s; ++i, ++j)
+              v.add(-1.0 * gamma(j), G[i]);
             preconditioner.vmult(vhat, v);
 
             uhat = vhat;
             uhat *= omega;
             j = 0;
-            for (unsigned int i = k; i < s; ++i)
-              {
-                uhat.add(gamma(j), U[i]);
-                ++j;
-              }
+            for (unsigned int i = k; i < s; ++i, ++j)
+              uhat.add(gamma(j), U[i]);
             A.vmult(ghat, uhat);
           }
 
@@ -427,8 +405,8 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
           for (unsigned int i = 0; i < k; ++i)
             {
               double alpha = (Q[i] * ghat) / M(i, i);
-              ghat.add(-1.0 * alpha, G[i]);
-              uhat.add(-1.0 * alpha, U[i]);
+              ghat.add(-alpha, G[i]);
+              uhat.add(-alpha, U[i]);
             }
           G[k] = ghat;
           U[k] = uhat;
@@ -437,12 +415,14 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
           for (unsigned int i = k; i < s; ++i)
             M(i, k) = Q[i] * G[k];
 
-          // Orthoginalize r to Q0,...,Qk,
+          // Orthogonalize r to Q0,...,Qk,
           // update x
           {
             double beta = phi(k) / M(k, k);
             r.add(-1.0 * beta, G[k]);
             x.add(beta, U[k]);
+
+            print_vectors(step, x, r, U[k]);
 
             // Check for early convergence. If so, store
             // information in early_exit so that outer iteration
@@ -476,6 +456,8 @@ SolverIDR<VectorType>::solve(const MatrixType &        A,
 
       r.add(-1.0 * omega, v);
       x.add(omega, vhat);
+
+      print_vectors(step, x, r, vhat);
 
       // Check for convergence
       res             = r.l2_norm();
