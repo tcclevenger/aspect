@@ -1330,7 +1330,7 @@ namespace aspect
     level_coef_dof_vec = 0.;
     level_coef_dof_vec.resize(0,n_levels-1);
 
-    MGTransferMatrixFree<dim,double> transfer(mg_constrained_dofs);
+    MGTransferMatrixFree<dim,double> transfer;
     transfer.build(dof_handler_projection);
     transfer.interpolate_to_mg(dof_handler_projection,
                                level_coef_dof_vec,
@@ -1440,7 +1440,7 @@ namespace aspect
             {
               smoother_data[0].smoothing_range = 1e-3;
               smoother_data[0].degree = numbers::invalid_unsigned_int;
-              smoother_data[0].eig_cg_n_iterations = mg_matrices[0].m();
+              smoother_data[0].eig_cg_n_iterations = 100; /*mg_matrices_A[0].m();*/
             }
           smoother_data[level].preconditioner = mg_matrices[level].get_matrix_diagonal_inverse();
         }
@@ -1481,10 +1481,9 @@ namespace aspect
     typename MassPreconditioner::AdditionalData prec_S_data;
     prec_S_data.smoothing_range = 1e-3;
     prec_S_data.degree = numbers::invalid_unsigned_int;
-    prec_S_data.eig_cg_n_iterations = mass_matrix.m();
+    prec_S_data.eig_cg_n_iterations = 100; //mass_matrix.m();
     prec_S_data.preconditioner = mass_matrix.get_matrix_diagonal_inverse();
     prec_S.initialize(mass_matrix,prec_S_data);
-
 
     // Many parts of the solver depend on the block layout (velocity = 0,
     // pressure = 1). For example the linearized_stokes_initial_guess vector or the StokesBlock matrix
@@ -1809,6 +1808,9 @@ namespace aspect
   template <int dim, int velocity_degree>
   void StokesMatrixFreeHandlerImplementation<dim, velocity_degree>::setup_dofs()
   {
+
+    sim.pcout << "GMG Workload Imbalance: " << this->get_workload_imbalance() << std::endl << std::endl;
+
     // Velocity DoFHandler
     {
       dof_handler_v.clear();
@@ -2026,8 +2028,6 @@ namespace aspect
   void StokesMatrixFreeHandlerImplementation<dim, velocity_degree>::build_preconditioner()
   {
     TimerOutput::Scope timer (this->sim.computing_timer, "Build Stokes preconditioner");
-    evaluate_material_model();
-    correct_stokes_rhs();
     compute_A_block_diagonals();
   }
 
@@ -2124,8 +2124,6 @@ namespace aspect
           }
       }
   }
-
-
 
 
 // explicit instantiation of the functions we implement in this file

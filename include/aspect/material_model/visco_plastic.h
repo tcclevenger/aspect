@@ -186,7 +186,7 @@ namespace aspect
 
         std::vector<double> thermal_conductivities;
 
-	EquationOfState::MulticomponentIncompressible<dim> equation_of_state;
+        EquationOfState::MulticomponentIncompressible<dim> equation_of_state;
 
         /**
          * Enumeration for selecting which viscosity averaging scheme to use.

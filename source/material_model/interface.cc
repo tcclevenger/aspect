@@ -748,7 +748,10 @@ namespace aspect
                                        expansion_matrix);
           }
 
-        average_property (operation, projection_matrix, expansion_matrix, values_out.viscosities);
+
+
+        average_property (operation,projection_matrix, expansion_matrix,
+                          values_out.viscosities);
         average_property (operation, projection_matrix, expansion_matrix,
                           values_out.densities);
         average_property (operation, projection_matrix, expansion_matrix,

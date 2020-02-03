@@ -426,9 +426,9 @@ namespace aspect
             out.thermal_conductivities[i] = thermal_diffusivity * out.specific_heat[i] * out.densities[i];
 
           // Replace thermal conductivities with values directly specified in the parameter, if this
-	  // option was selected.
-	  if (define_conductivities == true)
-	     out.thermal_conductivities[i] = MaterialUtilities::average_value (volume_fractions, thermal_conductivities, MaterialUtilities::arithmetic);
+          // option was selected.
+          if (define_conductivities == true)
+            out.thermal_conductivities[i] = MaterialUtilities::average_value (volume_fractions, thermal_conductivities, MaterialUtilities::arithmetic);
 
           out.compressibilities[i] = MaterialUtilities::average_value (volume_fractions, eos_outputs.compressibilities, MaterialUtilities::arithmetic);
           out.entropy_derivative_pressure[i] = MaterialUtilities::average_value (volume_fractions, eos_outputs.entropy_derivative_pressure, MaterialUtilities::arithmetic);
@@ -556,13 +556,13 @@ namespace aspect
           prm.declare_entry ("Define thermal conductivities","false",
                              Patterns::Bool (),
                              "Whether to directly define thermal conductivities for each compositional field "
-			     "instead of calculating the values through the specified thermal diffusivities, "
-			     "densities, and heat capacities. ");
+                             "instead of calculating the values through the specified thermal diffusivities, "
+                             "densities, and heat capacities. ");
           prm.declare_entry ("Thermal conductivities", "3.0",
                              Patterns::List(Patterns::Double(0)),
                              "List of thermal conductivities, for background material and compositional fields, "
                              "for a total of N+1 values, where N is the number of compositional fields. "
-                             "If only one value is given, then all use the same value.  Units: $W/(m K)$");	  
+                             "If only one value is given, then all use the same value.  Units: $W/(m K)$");
 
           // Rheological parameters
           prm.declare_entry ("Viscosity averaging scheme", "harmonic",
@@ -647,9 +647,9 @@ namespace aspect
 
           define_conductivities = prm.get_bool ("Define thermal conductivities");
 
-	  thermal_conductivities = Utilities::possibly_extend_from_1_to_N (Utilities::string_to_double(Utilities::split_string_list(prm.get("Thermal conductivities"))),
-                                                                          n_fields,
-                                                                          "Thermal conductivities");
+          thermal_conductivities = Utilities::possibly_extend_from_1_to_N (Utilities::string_to_double(Utilities::split_string_list(prm.get("Thermal conductivities"))),
+                                                                           n_fields,
+                                                                           "Thermal conductivities");
 
 
           viscosity_averaging = MaterialUtilities::parse_compositional_averaging_operation ("Viscosity averaging scheme",

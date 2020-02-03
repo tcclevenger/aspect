@@ -31,6 +31,9 @@
 #include <aspect/simulator/assemblers/stokes.h>
 #include <aspect/simulator/assemblers/advection.h>
 
+#include <aspect/stokes_matrix_free.h>
+
+
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/work_stream.h>
 #include <deal.II/base/signaling_nan.h>
@@ -680,13 +683,12 @@ namespace aspect
   {
     std::string timer_section_name = "Assemble Stokes system";
 
-    // Matrix-free, only assemble RHS
-    if (stokes_matrix_free)
+    /*if (stokes_matrix_free)
       {
         rebuild_stokes_matrix = false;
         timer_section_name += " rhs";
       }
-    else if (assemble_newton_stokes_system)
+    else */if (assemble_newton_stokes_system)
       {
         if (!assemble_newton_stokes_matrix)
           timer_section_name += " rhs";
@@ -695,6 +697,14 @@ namespace aspect
         else if (assemble_newton_stokes_matrix && newton_handler->parameters.newton_derivative_scaling_factor != 0)
           timer_section_name += " Newton";
       }
+
+    // Matrix-free, only assemble RHS
+    if (stokes_matrix_free)
+      {
+        rebuild_stokes_matrix = false;
+        assemble_newton_stokes_matrix = false;
+      }
+
 
     TimerOutput::Scope timer (computing_timer,
                               timer_section_name);
@@ -813,6 +823,16 @@ namespace aspect
         make_pressure_rhs_compatible(system_rhs);
       }
 
+
+    if (stokes_matrix_free)
+      {
+        timer_section_name += " - matrix-free";
+        TimerOutput::Scope timer (computing_timer,
+                                  timer_section_name);
+
+        stokes_matrix_free->evaluate_material_model();
+        stokes_matrix_free->correct_stokes_rhs();
+      }
 
     // record that we have just rebuilt the matrix
     rebuild_stokes_matrix = false;
