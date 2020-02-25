@@ -349,6 +349,13 @@ namespace aspect
                            "may trigger Asserts in the code when using this solver. If this is the case, "
                            "the user should switch to block AMG.");
 
+
+        prm.declare_entry ("Schur complement type", "mass_matrix",
+                           Patterns::Selection(SchurComplementType::pattern()),
+                           ".");
+
+
+
         prm.declare_entry ("Use direct solver for Stokes system", "false",
                            Patterns::Bool(),
                            "If set to true the linear system for the Stokes equation will "
@@ -1315,6 +1322,8 @@ namespace aspect
         if (prm.get_bool("Use direct solver for Stokes system"))
           stokes_solver_type = StokesSolverType::direct_solver;
         use_direct_stokes_solver        = stokes_solver_type==StokesSolverType::direct_solver;
+
+        schur_complement_type = SchurComplementType::parse(prm.get("Schur complement type"));
 
         linear_stokes_solver_tolerance  = prm.get_double ("Linear solver tolerance");
         n_cheap_stokes_solver_steps     = prm.get_integer ("Number of cheap Stokes solver steps");

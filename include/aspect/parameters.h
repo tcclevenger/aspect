@@ -323,6 +323,38 @@ namespace aspect
       }
     };
 
+
+    /**
+     * This enum represents the different choices for the
+     * Schur complement approx.
+     */
+    struct SchurComplementType
+    {
+      enum Kind
+      {
+        mass_matrix,
+        lsc
+      };
+
+      static const std::string pattern()
+      {
+        return "mass matrix|LSC";
+      }
+
+      static Kind
+      parse(const std::string &input)
+      {
+        if (input == "mass matrix")
+          return mass_matrix;
+        else if (input == "LSC")
+          return lsc;
+        else
+          AssertThrow(false, ExcNotImplemented());
+
+        return Kind();
+      }
+    };
+
     /**
      * Constructor. Fills the values of member functions from the given
      * parameter object.
@@ -428,6 +460,7 @@ namespace aspect
     // subsection: Stokes solver parameters
     bool                           use_direct_stokes_solver;
     typename StokesSolverType::Kind stokes_solver_type;
+    typename SchurComplementType::Kind schur_complement_type;
 
     double                         linear_stokes_solver_tolerance;
     unsigned int                   n_cheap_stokes_solver_steps;
@@ -435,6 +468,8 @@ namespace aspect
     double                         linear_solver_A_block_tolerance;
     bool                           use_full_A_block_preconditioner;
     double                         linear_solver_S_block_tolerance;
+    unsigned int                   stokes_gmres_restart_length;
+
     unsigned int                   stokes_gmres_restart_length;
 
     // subsection: AMG parameters

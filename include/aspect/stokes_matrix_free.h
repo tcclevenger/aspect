@@ -152,7 +152,82 @@ namespace aspect
         void fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &viscosity_values,
                              const double pressure_scaling,
                              const Triangulation<dim> &tria,
-                             const DoFHandler<dim> &dof_handler_for_projection);
+                             const DoFHandler<dim> &dof_handler_for_projection,
+                             const bool for_mg);
+
+
+        /**
+         * Computes the diagonal of the matrix. Since matrix-free operators have not access
+         * to matrix elements, we must apply the matrix-free operator to the unit vectors to
+         * recover the diagonal.
+         */
+        void compute_diagonal () override;
+
+      private:
+
+        /**
+         * Performs the application of the matrix-free operator. This function is called by
+         * vmult() functions MatrixFreeOperators::Base.
+         */
+        void apply_add (dealii::LinearAlgebra::distributed::Vector<number> &dst,
+                        const dealii::LinearAlgebra::distributed::Vector<number> &src) const override;
+
+        /**
+         * Defines the application of the cell matrix.
+         */
+        void local_apply (const dealii::MatrixFree<dim, number> &data,
+                          dealii::LinearAlgebra::distributed::Vector<number> &dst,
+                          const dealii::LinearAlgebra::distributed::Vector<number> &src,
+                          const std::pair<unsigned int, unsigned int> &cell_range) const;
+
+
+        /**
+         * Computes the diagonal contribution from a cell matrix.
+         */
+        void local_compute_diagonal (const MatrixFree<dim,number>                     &data,
+                                     dealii::LinearAlgebra::distributed::Vector<number>  &dst,
+                                     const unsigned int                               &dummy,
+                                     const std::pair<unsigned int,unsigned int>       &cell_range) const;
+
+        /**
+         * Table which stores a viscosity value for each cell.
+         */
+        Table<1, VectorizedArray<number> > one_over_viscosity;
+
+        /**
+         * Pressure scaling constant.
+         */
+        double pressure_scaling;
+    };
+
+
+    /**
+     * Operator for the pressure mass matrix used in the block preconditioner
+     */
+    template <int dim, int degree_p, typename number>
+    class PressurePoissonOperator
+      : public MatrixFreeOperators::Base<dim, dealii::LinearAlgebra::distributed::Vector<number>>
+    {
+      public:
+
+        /**
+         * Constructor
+         */
+        PressurePoissonOperator ();
+
+        /**
+         * Reset the object.
+         */
+        void clear () override;
+
+        /**
+         * Fills in the viscosity table and sets the value for the pressure scaling constant.
+         */
+        void fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &viscosity_values,
+                             const double pressure_scaling,
+                             const Triangulation<dim> &tria,
+                             const DoFHandler<dim> &dof_handler_for_projection,
+                             const bool for_mg);
 
 
         /**
@@ -421,6 +496,7 @@ namespace aspect
 
       typedef MatrixFreeStokesOperators::StokesOperator<dim,velocity_degree,double> StokesMatrixType;
       typedef MatrixFreeStokesOperators::MassMatrixOperator<dim,velocity_degree-1,double> MassMatrixType;
+      typedef MatrixFreeStokesOperators::PressurePoissonOperator<dim,velocity_degree-1,double> PressurePoissonType;
       typedef MatrixFreeStokesOperators::ABlockOperator<dim,velocity_degree,double> ABlockMatrixType;
 
       StokesMatrixType stokes_matrix;
@@ -431,14 +507,19 @@ namespace aspect
       ConstraintMatrix constraints_p;
       ConstraintMatrix constraints_projection;
 
-      MGLevelObject<ABlockMatrixType> mg_matrices;
-      MGConstrainedDoFs mg_constrained_dofs;
+      MGLevelObject<ABlockMatrixType> mg_matrices_A;
+      MGLevelObject<MassMatrixType> mg_matrices_M;
+      MGLevelObject<PressurePoissonType> mg_matrices_LSC;
+
+      MGConstrainedDoFs mg_constrained_dofs_A;
+      MGConstrainedDoFs mg_constrained_dofs_M;
       MGConstrainedDoFs mg_constrained_dofs_projection;
 
       dealii::LinearAlgebra::distributed::Vector<double> active_coef_dof_vec;
       MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_coef_dof_vec;
 
-      MGTransferMatrixFree<dim,double> mg_transfer;
+      MGTransferMatrixFree<dim,double> mg_transfer_A;
+      MGTransferMatrixFree<dim,double> mg_transfer_M;
   };
 }
 
