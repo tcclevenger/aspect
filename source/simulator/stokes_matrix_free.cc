@@ -758,6 +758,7 @@ namespace aspect
     vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
            const dealii::LinearAlgebra::distributed::BlockVector<double>  &src) const
     {
+      //if (dealii::Utilities::MPI::this_mpi_process(src.block(0).))
       if (utmp.size()==0)
         {
           utmp.reinit(src);
@@ -773,6 +774,8 @@ namespace aspect
         }
       else
         {
+          //PressurePoisson
+
           // (B*D^-1*B^T)^-1
           mp_preconditioner.vmult(ptmp.block(1),src.block(1));
 
@@ -780,11 +783,11 @@ namespace aspect
           ptmp.block(0) = 0.0;
           stokes_matrix.vmult(utmp, ptmp); // B^T
 
-          velocity_matrix.get_matrix_diagonal_inverse()->get_vector().scale(utmp.block(0)); // D^-1
+          //velocity_matrix.get_matrix_diagonal_inverse()->get_vector().scale(utmp.block(0)); // D^-1
 
           velocity_matrix.vmult(dst.block(0),utmp.block(0)); // A
 
-          velocity_matrix.get_matrix_diagonal_inverse()->get_vector().scale(dst.block(0)); // D^-1
+          //velocity_matrix.get_matrix_diagonal_inverse()->get_vector().scale(dst.block(0)); // D^-1
 
           dst.block(1) = 0.0;
           stokes_matrix.vmult(ptmp,dst); // B
@@ -1147,7 +1150,7 @@ namespace aspect
 
 
   /**
-   * Pressure poisson operator
+   * Pressure poisson operator. LSC
    */
   template <int dim, int degree_p, typename number>
   MatrixFreeStokesOperators::PressurePoissonOperator<dim,degree_p,number>::PressurePoissonOperator ()
@@ -1170,7 +1173,7 @@ namespace aspect
   {
     this->coefficient_vector.reinit(coefficient_vector);
     this->coefficient_vector = coefficient_vector;
-    this->pressure_scaling = pressure_scaling;
+    this->pressure_scaling = 1.0;//pressure_scaling;
   }
 
   template <int dim, int degree_p, typename number>
@@ -1195,9 +1198,9 @@ namespace aspect
         coefficient.evaluate (true,false);
 
         for (unsigned int q=0; q<pressure.n_q_points; ++q)
-          pressure.submit_gradient(coefficient.get_value(q)*
-                                   pressure_scaling*pressure_scaling*
-                                   pressure.get_gradient(q),q);
+          pressure.submit_gradient(/*coefficient.get_value(q)*/
+            pressure_scaling*pressure_scaling*
+            pressure.get_gradient(q),q);
 
         pressure.integrate (false, true);
         pressure.distribute_local_to_global (dst);
@@ -1275,12 +1278,12 @@ namespace aspect
               pressure.begin_dof_values()[j] = VectorizedArray<number>();
             pressure.begin_dof_values()[i] = make_vectorized_array<number> (1.);
 
-            pressure.evaluate (true,false,false);
+            pressure.evaluate (false,true,false);
             for (unsigned int q=0; q<pressure.n_q_points; ++q)
-              pressure.submit_value(coefficient.get_value(q)*
-                                    pressure_scaling*pressure_scaling*
-                                    pressure.get_value(q),q);
-            pressure.integrate (true,false);
+              pressure.submit_gradient(/*coefficient.get_value(q)*/
+                pressure_scaling*pressure_scaling*
+                pressure.get_gradient(q),q);
+            pressure.integrate (false,true);
 
             diagonal[i] = pressure.begin_dof_values()[i];
           }
@@ -2196,6 +2199,10 @@ namespace aspect
 
     internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_solution);
     internal::ChangeVectorTypes::copy(rhs_copy,distributed_stokes_rhs);
+
+    const int my_rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+    if (my_rank == 0)
+      deallog.depth_console(5);
 
     // create Solver controls for the cheap and expensive solver phase
     SolverControl solver_control_cheap (sim.parameters.n_cheap_stokes_solver_steps,
