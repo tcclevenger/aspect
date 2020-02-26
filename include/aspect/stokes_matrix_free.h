@@ -223,11 +223,8 @@ namespace aspect
         /**
          * Fills in the viscosity table and sets the value for the pressure scaling constant.
          */
-        void fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &viscosity_values,
-                             const double pressure_scaling,
-                             const Triangulation<dim> &tria,
-                             const DoFHandler<dim> &dof_handler_for_projection,
-                             const bool for_mg);
+        void fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &coefficient_vector,
+                             const double pressure_scaling);
 
 
         /**
@@ -266,7 +263,7 @@ namespace aspect
         /**
          * Table which stores a viscosity value for each cell.
          */
-        Table<1, VectorizedArray<number> > one_over_viscosity;
+        dealii::LinearAlgebra::distributed::Vector<double> coefficient_vector;
 
         /**
          * Pressure scaling constant.
@@ -502,6 +499,7 @@ namespace aspect
       StokesMatrixType stokes_matrix;
       ABlockMatrixType velocity_matrix;
       MassMatrixType mass_matrix;
+      PressurePoissonType pressure_poisson;
 
       ConstraintMatrix constraints_v;
       ConstraintMatrix constraints_p;
@@ -517,6 +515,10 @@ namespace aspect
 
       dealii::LinearAlgebra::distributed::Vector<double> active_coef_dof_vec;
       MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_coef_dof_vec;
+
+      dealii::LinearAlgebra::distributed::Vector<double> pressure_poisson_active_coef;
+      MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > pressure_poisson_level_coef;
+
 
       MGTransferMatrixFree<dim,double> mg_transfer_A;
       MGTransferMatrixFree<dim,double> mg_transfer_M;

@@ -672,13 +672,13 @@ namespace aspect
          *     the inverse of the S block (Schur complement matrix).
          */
         LSCPreconditioner (const StokesMatrixType &S,
-                                     const ABlockMatrixType &A,
-                                     const PreconditionerMp &Mppreconditioner,
-                                     const PreconditionerA  &Apreconditioner,
-                                     const bool              do_solve_M,
-                                     const bool              do_solve_A,
-                                     const double            A_block_tolerance,
-                                     const double            S_block_tolerance);
+                           const ABlockMatrixType &A,
+                           const PreconditionerMp &Mppreconditioner,
+                           const PreconditionerA  &Apreconditioner,
+                           const bool              do_solve_M,
+                           const bool              do_solve_A,
+                           const double            A_block_tolerance,
+                           const double            S_block_tolerance);
 
         /**
          * Matrix vector product with this preconditioner object.
@@ -713,16 +713,16 @@ namespace aspect
         mutable dealii::LinearAlgebra::distributed::BlockVector<double> ptmp;
     };
 
-    template <class ABlockMatrixType, class StokesMatrixType, class PoissonMatrixType, class PreconditionerMp,class PreconditionerA>
-    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PoissonMatrixType, PreconditionerMp, PreconditionerA>::
+    template <class ABlockMatrixType, class StokesMatrixType, class PreconditionerMp,class PreconditionerA>
+    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PreconditionerMp, PreconditionerA>::
     LSCPreconditioner (const StokesMatrixType &S,
-                                 const ABlockMatrixType &A,
-                                 const PreconditionerMp &Mppreconditioner,
-                                 const PreconditionerA  &Apreconditioner,
-                                 const bool              do_solve_M,
-                                 const bool              do_solve_A,
-                                 const double            A_block_tolerance,
-                                 const double            S_block_tolerance)
+                       const ABlockMatrixType &A,
+                       const PreconditionerMp &Mppreconditioner,
+                       const PreconditionerA  &Apreconditioner,
+                       const bool              do_solve_M,
+                       const bool              do_solve_A,
+                       const double            A_block_tolerance,
+                       const double            S_block_tolerance)
       :
       stokes_matrix     (S),
       velocity_matrix   (A),
@@ -736,25 +736,25 @@ namespace aspect
       S_block_tolerance (S_block_tolerance)
     {}
 
-    template <class ABlockMatrixType, class StokesMatrixType, class PoissonMatrixType, class PreconditionerMp,class PreconditionerA>
+    template <class ABlockMatrixType, class StokesMatrixType, class PreconditionerMp,class PreconditionerA>
     unsigned int
-    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PoissonMatrixType, PreconditionerMp, PreconditionerA>::
+    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PreconditionerMp, PreconditionerA>::
     n_iterations_A() const
     {
       return n_iterations_A_;
     }
 
-    template <class ABlockMatrixType, class StokesMatrixType, class PoissonMatrixType, class PreconditionerMp,class PreconditionerA>
+    template <class ABlockMatrixType, class StokesMatrixType, class PreconditionerMp,class PreconditionerA>
     unsigned int
-    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PoissonMatrixType, PreconditionerMp, PreconditionerA>::
+    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PreconditionerMp, PreconditionerA>::
     n_iterations_S() const
     {
       return n_iterations_S_;
     }
 
-    template <class ABlockMatrixType, class StokesMatrixType, class PoissonMatrixType, class PreconditionerMp,class PreconditionerA>
+    template <class ABlockMatrixType, class StokesMatrixType, class PreconditionerMp,class PreconditionerA>
     void
-    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PoissonMatrixType, PreconditionerMp, PreconditionerA>::
+    LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PreconditionerMp, PreconditionerA>::
     vmult (dealii::LinearAlgebra::distributed::BlockVector<double>       &dst,
            const dealii::LinearAlgebra::distributed::BlockVector<double>  &src) const
     {
@@ -769,7 +769,7 @@ namespace aspect
       // iterations of our two-stage outer GMRES iteration)
       if (do_solve_M)
         {
-            Assert(false, ExcNotImplemented());
+          Assert(false, ExcNotImplemented());
         }
       else
         {
@@ -1159,50 +1159,17 @@ namespace aspect
   void
   MatrixFreeStokesOperators::PressurePoissonOperator<dim,degree_p,number>::clear ()
   {
-    one_over_viscosity.reinit(TableIndices<1>(0));
     MatrixFreeOperators::Base<dim,dealii::LinearAlgebra::distributed::Vector<number> >::clear();
   }
 
   template <int dim, int degree_p, typename number>
   void
   MatrixFreeStokesOperators::PressurePoissonOperator<dim,degree_p,number>::
-  fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &viscosity_values,
-                  const double pressure_scaling,
-                  const Triangulation<dim> &tria,
-                  const DoFHandler<dim> &dof_handler_for_projection,
-                  const bool for_mg)
+  fill_cell_data (const dealii::LinearAlgebra::distributed::Vector<number> &coefficient_vector,
+                  const double pressure_scaling)
   {
-    const unsigned int n_cells = this->data->n_macro_cells();
-    one_over_viscosity.reinit(TableIndices<1>(n_cells));
-
-    std::vector<types::global_dof_index> local_dof_indices(dof_handler_for_projection.get_fe().dofs_per_cell);
-    for (unsigned int cell=0; cell<n_cells; ++cell)
-      for (unsigned int i=0; i<this->get_matrix_free()->n_components_filled(cell); ++i)
-        {
-          if (for_mg)
-            {
-              typename DoFHandler<dim>::level_cell_iterator FEQ_cell = this->get_matrix_free()->get_cell_iterator(cell,i);
-              typename DoFHandler<dim>::level_cell_iterator DG_cell(&tria,
-                                                                    FEQ_cell->level(),
-                                                                    FEQ_cell->index(),
-                                                                    &dof_handler_for_projection);
-              DG_cell->get_active_or_mg_dof_indices(local_dof_indices);
-            }
-          else
-            {
-              typename DoFHandler<dim>::active_cell_iterator FEQ_cell = this->get_matrix_free()->get_cell_iterator(cell,i);
-              typename DoFHandler<dim>::active_cell_iterator DG_cell(&tria,
-                                                                     FEQ_cell->level(),
-                                                                     FEQ_cell->index(),
-                                                                     &dof_handler_for_projection);
-              DG_cell->get_active_or_mg_dof_indices(local_dof_indices);
-            }
-
-          //TODO: projection with higher degree
-          Assert(local_dof_indices.size() == 1, ExcNotImplemented());
-          one_over_viscosity(cell)[i] = 1.0/viscosity_values(local_dof_indices[0]);
-        }
-
+    this->coefficient_vector.reinit(coefficient_vector);
+    this->coefficient_vector = coefficient_vector;
     this->pressure_scaling = pressure_scaling;
   }
 
@@ -1215,18 +1182,24 @@ namespace aspect
                  const std::pair<unsigned int, unsigned int>           &cell_range) const
   {
     FEEvaluation<dim,degree_p,degree_p+2,1,number> pressure (data);
+    FEEvaluation<dim,degree_p,degree_p+2,1,number> coefficient (data);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        const VectorizedArray<number> &cell_one_over_viscosity = one_over_viscosity(cell);
-
         pressure.reinit (cell);
         pressure.read_dof_values(src);
-        pressure.evaluate (true, false);
+        pressure.evaluate (false, true);
+
+        coefficient.reinit (cell);
+        coefficient.read_dof_values(coefficient_vector);
+        coefficient.evaluate (true,false);
+
         for (unsigned int q=0; q<pressure.n_q_points; ++q)
-          pressure.submit_value(cell_one_over_viscosity*pressure_scaling*pressure_scaling*
-                                pressure.get_value(q),q);
-        pressure.integrate (true, false);
+          pressure.submit_gradient(coefficient.get_value(q)*
+                                   pressure_scaling*pressure_scaling*
+                                   pressure.get_gradient(q),q);
+
+        pressure.integrate (false, true);
         pressure.distribute_local_to_global (dst);
       }
   }
@@ -1285,11 +1258,16 @@ namespace aspect
                             const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
     FEEvaluation<dim,degree_p,degree_p+2,1,number> pressure (data, 0);
+    FEEvaluation<dim,degree_p,degree_p+2,1,number> coefficient (data, 0);
+
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        const VectorizedArray<number> &cell_one_over_viscosity = one_over_viscosity(cell);
-
         pressure.reinit (cell);
+
+        coefficient.reinit (cell);
+        coefficient.read_dof_values(coefficient_vector);
+        coefficient.evaluate (true,false);
+
         AlignedVector<VectorizedArray<number> > diagonal(pressure.dofs_per_cell);
         for (unsigned int i=0; i<pressure.dofs_per_cell; ++i)
           {
@@ -1299,7 +1277,8 @@ namespace aspect
 
             pressure.evaluate (true,false,false);
             for (unsigned int q=0; q<pressure.n_q_points; ++q)
-              pressure.submit_value(cell_one_over_viscosity*pressure_scaling*pressure_scaling*
+              pressure.submit_value(coefficient.get_value(q)*
+                                    pressure_scaling*pressure_scaling*
                                     pressure.get_value(q),q);
             pressure.integrate (true,false);
 
@@ -1716,7 +1695,7 @@ namespace aspect
                                  dof_handler_projection,
                                  is_compressible);
 
-    if (sim.parameters.n_expensive_stokes_solver_steps > 0)
+    if (true)//sim.parameters.n_expensive_stokes_solver_steps > 0)
       {
         velocity_matrix.fill_cell_data(active_coef_dof_vec,
                                        sim.triangulation,
@@ -1757,6 +1736,87 @@ namespace aspect
                                             dof_handler_projection,
                                             /*for_mg*/ true);
       }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Coefficient on pressure poisson
+    {
+      velocity_matrix.compute_diagonal();
+
+      const QGauss<dim> quadrature_formula (sim.parameters.stokes_velocity_degree+1);
+
+      FEValues<dim> fe_values (*sim.mapping,
+                               fe_v,
+                               quadrature_formula,
+                               update_values   |
+                               update_quadrature_points |
+                               update_JxW_values);
+
+
+      pressure_poisson.initialize_dof_vector(pressure_poisson_active_coef);
+      pressure_poisson_active_coef = 0.;
+      std::vector<Vector<double>> diag_values(fe_values.n_quadrature_points,
+                                              Vector<double>(dim));
+
+
+      VectorTools::project(*(sim.mapping),dof_handler_p, constraints_p, quadrature_formula,
+                           [&] (const typename DoFHandler<dim>::active_cell_iterator & cell,
+                                const unsigned int q) -> double
+      {
+        typename DoFHandler<dim>::active_cell_iterator cell_v(&sim.triangulation,
+        cell->level(),
+        cell->index(),
+        &(dof_handler_v));
+
+        fe_values.reinit (cell_v);
+        fe_values.get_function_values(velocity_matrix.get_matrix_diagonal_inverse()->get_vector(),
+        diag_values);
+
+        double sum = 0.0;
+        for (unsigned int c=0; c<fe_v.n_components(); ++c)
+          sum += diag_values[q][c];
+        sum /= fe_v.n_components();
+
+        return sum;
+      },
+      pressure_poisson_active_coef);
+
+      pressure_poisson_active_coef.compress(VectorOperation::insert);
+
+
+      pressure_poisson.fill_cell_data(pressure_poisson_active_coef,
+                                      sim.pressure_scaling);
+
+
+      // Project to MG
+      const unsigned int n_levels = sim.triangulation.n_global_levels();
+      pressure_poisson_level_coef = 0.;
+      pressure_poisson_level_coef.resize(0,n_levels-1);
+
+      MGTransferMatrixFree<dim,double> transfer;
+      transfer.build(dof_handler_p);
+      transfer.interpolate_to_mg(dof_handler_p,
+                                 pressure_poisson_level_coef,
+                                 pressure_poisson_active_coef);
+
+      for (unsigned int level=0; level<n_levels; ++level)
+        {
+          mg_matrices_LSC[level].fill_cell_data(pressure_poisson_level_coef[level],
+                                                sim.pressure_scaling);
+        }
+
+    }
   }
 
 
@@ -1886,6 +1946,32 @@ namespace aspect
       mg_smoother_M.initialize(mg_matrices_M, smoother_data_M);
     }
 
+    // Pressure Poisson GMG Smoother: Chebyshev, degree 4
+    typedef PreconditionChebyshev<PressurePoissonType,vector_t> LSCSmootherType;
+    mg::SmootherRelaxation<LSCSmootherType, vector_t>
+    mg_smoother_LSC(4);
+    {
+      MGLevelObject<typename LSCSmootherType::AdditionalData> smoother_data_LSC;
+      smoother_data_LSC.resize(0, sim.triangulation.n_global_levels()-1);
+      for (unsigned int level = 0; level<sim.triangulation.n_global_levels(); ++level)
+        {
+          if (level > 0)
+            {
+              smoother_data_LSC[level].smoothing_range = 15.;
+              smoother_data_LSC[level].degree = 4;
+              smoother_data_LSC[level].eig_cg_n_iterations = 10;
+            }
+          else
+            {
+              smoother_data_LSC[0].smoothing_range = 1e-3;
+              smoother_data_LSC[0].degree = numbers::invalid_unsigned_int;
+              smoother_data_LSC[0].eig_cg_n_iterations = 100; /*mg_matrices_M[0].m();*/
+            }
+          smoother_data_LSC[level].preconditioner = mg_matrices_LSC[level].get_matrix_diagonal_inverse();
+        }
+      mg_smoother_LSC.initialize(mg_matrices_LSC, smoother_data_LSC);
+    }
+
     // Coarse Solver is just an application of the Chebyshev smoother setup
     // in such a way to be a solver
     //ABlock GMG
@@ -1895,6 +1981,10 @@ namespace aspect
     //Mass matrix GMG
     MGCoarseGridApplySmoother<vector_t> mg_coarse_M;
     mg_coarse_M.initialize(mg_smoother_M);
+
+    //Pressure Poisson GMG
+    MGCoarseGridApplySmoother<vector_t> mg_coarse_LSC;
+    mg_coarse_LSC.initialize(mg_smoother_LSC);
 
     // Interface matrices
     // Ablock GMG
@@ -1911,9 +2001,17 @@ namespace aspect
       mg_interface_matrices_M[level].initialize(mg_matrices_M[level]);
     mg::Matrix<vector_t > mg_interface_M(mg_interface_matrices_M);
 
+    // Pressure Poisson GMG
+    MGLevelObject<MatrixFreeOperators::MGInterfaceOperator<PressurePoissonType> > mg_interface_matrices_LSC;
+    mg_interface_matrices_LSC.resize(0, sim.triangulation.n_global_levels()-1);
+    for (unsigned int level=0; level<sim.triangulation.n_global_levels(); ++level)
+      mg_interface_matrices_LSC[level].initialize(mg_matrices_LSC[level]);
+    mg::Matrix<vector_t > mg_interface_LSC(mg_interface_matrices_LSC);
+
     // MG Matrix
     mg::Matrix<vector_t > mg_matrix_A(mg_matrices_A);
     mg::Matrix<vector_t > mg_matrix_M(mg_matrices_M);
+    mg::Matrix<vector_t > mg_matrix_LSC(mg_matrices_LSC);
 
     // MG object
     // ABlock GMG
@@ -1932,6 +2030,14 @@ namespace aspect
                               mg_smoother_M);
     mg_M.set_edge_matrices(mg_interface_M, mg_interface_M);
 
+    // Pressure Poisson GMG
+    Multigrid<vector_t > mg_LSC(mg_matrix_LSC,
+                                mg_coarse_LSC,
+                                mg_transfer_M,
+                                mg_smoother_LSC,
+                                mg_smoother_LSC);
+    mg_LSC.set_edge_matrices(mg_interface_LSC, mg_interface_LSC);
+
     // GMG Preconditioner
     typedef PreconditionMG<dim, vector_t, MGTransferMatrixFree<dim,double> > APreconditioner;
     APreconditioner prec_A(dof_handler_v, mg_A, mg_transfer_A);
@@ -1939,6 +2045,10 @@ namespace aspect
     // Mass matrix GMG
     typedef PreconditionMG<dim, vector_t, MGTransferMatrixFree<dim,double> > MassPreconditioner;
     APreconditioner prec_S(dof_handler_p, mg_M, mg_transfer_M);
+
+    // Mass matrix GMG
+    typedef PreconditionMG<dim, vector_t, MGTransferMatrixFree<dim,double> > PressurePreconditioner;
+    APreconditioner prec_LSC(dof_handler_p, mg_LSC, mg_transfer_M);
 
 
     // Many parts of the solver depend on the block layout (velocity = 0,
@@ -2108,12 +2218,12 @@ namespace aspect
 
     // create a cheap preconditioner that consists of only a single V-cycle
     const internal::LSCPreconditioner<ABlockMatrixType, StokesMatrixType, PressurePreconditioner, APreconditioner>
-    precondition_lsc (stokes_matrix, velocity_matrix,
-                          prec_S, prec_A,
-                          /*do_solve_M*/false,
-                          /*do_solve_A*/false,
-                          sim.parameters.linear_solver_A_block_tolerance,
-                          sim.parameters.linear_solver_S_block_tolerance);
+    preconditioner_lsc (stokes_matrix, velocity_matrix,
+                        prec_LSC, prec_A,
+                        /*do_solve_M*/false,
+                        /*do_solve_A*/false,
+                        sim.parameters.linear_solver_A_block_tolerance,
+                        sim.parameters.linear_solver_S_block_tolerance);
 
 
 
@@ -2143,10 +2253,20 @@ namespace aspect
                AdditionalData(sim.parameters.stokes_gmres_restart_length+2,
                               true));
 
-        solver.solve (stokes_matrix,
-                      solution_copy,
-                      rhs_copy,
-                      preconditioner_cheap);
+        if (sim.parameters.schur_complement_type == Parameters<dim>::SchurComplementType::mass_matrix)
+          {
+            solver.solve (stokes_matrix,
+                          solution_copy,
+                          rhs_copy,
+                          preconditioner_cheap);
+          }
+        else if (sim.parameters.schur_complement_type == Parameters<dim>::SchurComplementType::lsc)
+          {
+            solver.solve (stokes_matrix,
+                          solution_copy,
+                          rhs_copy,
+                          preconditioner_lsc);
+          }
 
         final_linear_residual = solver_control_cheap.last_value();
       }
@@ -2427,6 +2547,22 @@ namespace aspect
       mass_matrix.initialize(mass_mf_storage);
     }
 
+    // Pressure Poisson matrix
+    {
+      typename MatrixFree<dim,double>::AdditionalData additional_data;
+      additional_data.tasks_parallel_scheme =
+        MatrixFree<dim,double>::AdditionalData::none;
+      additional_data.mapping_update_flags = (update_values | update_gradients | update_JxW_values |
+                                              update_quadrature_points);
+      std::shared_ptr<MatrixFree<dim,double> >
+      pressure_poisson_mf_storage(new MatrixFree<dim,double>());
+      pressure_poisson_mf_storage->reinit(*sim.mapping,dof_handler_p, constraints_p,
+                                          QGauss<1>(sim.parameters.stokes_velocity_degree+1), additional_data);
+
+      pressure_poisson.clear();
+      pressure_poisson.initialize(pressure_poisson_mf_storage);
+    }
+
     // GMG matrices
     {
       const unsigned int n_levels = sim.triangulation.n_global_levels();
@@ -2527,6 +2663,41 @@ namespace aspect
             mg_matrices_M[level].initialize(mg_mf_storage_level, mg_constrained_dofs_M, level);
           }
         }
+
+
+      //Pressure Poisson GMG
+      mg_matrices_LSC.clear_elements();
+      mg_matrices_LSC.resize(0, n_levels-1);
+
+      for (unsigned int level=0; level<n_levels; ++level)
+        {
+          IndexSet relevant_dofs;
+          DoFTools::extract_locally_relevant_level_dofs(dof_handler_p, level, relevant_dofs);
+          ConstraintMatrix level_constraints;
+          level_constraints.reinit(relevant_dofs);
+          level_constraints.close();
+
+          {
+            typename MatrixFree<dim,double>::AdditionalData additional_data;
+            additional_data.tasks_parallel_scheme =
+              MatrixFree<dim,double>::AdditionalData::none;
+            additional_data.mapping_update_flags = (update_values | update_gradients | update_JxW_values |
+                                                    update_quadrature_points);
+#if DEAL_II_VERSION_GTE(9,2,0)
+            additional_data.mg_level = level;
+#else
+            additional_data.level_mg_handler = level;
+#endif
+            std::shared_ptr<MatrixFree<dim,double> >
+            mg_mf_storage_level(new MatrixFree<dim,double>());
+            mg_mf_storage_level->reinit(*sim.mapping, dof_handler_p, level_constraints,
+                                        QGauss<1>(sim.parameters.stokes_velocity_degree+1),
+                                        additional_data);
+
+            mg_matrices_LSC[level].clear();
+            mg_matrices_LSC[level].initialize(mg_mf_storage_level, mg_constrained_dofs_M, level);
+          }
+        }
     }
 
     // Build MG transfer
@@ -2550,6 +2721,8 @@ namespace aspect
     for (unsigned int level=0; level < sim.triangulation.n_global_levels(); ++level)
       {
         mg_matrices_M[level].compute_diagonal();
+
+        mg_matrices_LSC[level].compute_diagonal();
 
         // If we have a tangential boundary we must compute the A block
         // diagonal outside of the matrix-free object

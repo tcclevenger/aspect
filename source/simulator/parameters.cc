@@ -350,7 +350,7 @@ namespace aspect
                            "the user should switch to block AMG.");
 
 
-        prm.declare_entry ("Schur complement type", "mass_matrix",
+        prm.declare_entry ("Schur complement type", "mass matrix",
                            Patterns::Selection(SchurComplementType::pattern()),
                            ".");
 
