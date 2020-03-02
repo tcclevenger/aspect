@@ -437,6 +437,8 @@ namespace aspect
     double                         linear_solver_S_block_tolerance;
     unsigned int                   stokes_gmres_restart_length;
 
+    bool use_wbfbt;
+
     // subsection: AMG parameters
     std::string                    AMG_smoother_type;
     unsigned int                   AMG_smoother_sweeps;

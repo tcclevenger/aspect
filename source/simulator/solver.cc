@@ -37,6 +37,10 @@
 
 #include <deal.II/fe/fe_values.h>
 
+#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/dofs/dof_renumbering.h>
+
+
 namespace aspect
 {
   namespace internal
@@ -372,6 +376,290 @@ namespace aspect
           n_iterations_A_ += 1;
         }
     }
+
+
+
+
+
+
+
+
+    /**
+         * Implement the block Schur preconditioner for the Stokes system.
+         */
+    template <int dim, class PreconditionerA, class PreconditionerMp>
+    class BlockSchurBFBTPreconditioner : public Subscriptor
+    {
+      public:
+        /**
+         * @brief Constructor
+         *
+         * @param S The entire Stokes matrix
+         * @param Spre The matrix whose blocks are used in the definition of
+         *     the preconditioning of the Stokes matrix, i.e. containing approximations
+         *     of the A and S blocks.
+         * @param Mppreconditioner Preconditioner object for the Schur complement,
+         *     typically chosen as the mass matrix.
+         * @param Apreconditioner Preconditioner object for the matrix A.
+         * @param do_solve_A A flag indicating whether we should actually solve with
+         *     the matrix $A$, or only apply one preconditioner step with it.
+         * @param A_block_tolerance The tolerance for the CG solver which computes
+         *     the inverse of the A block.
+         * @param S_block_tolerance The tolerance for the CG solver which computes
+         *     the inverse of the S block (Schur complement matrix).
+         **/
+        BlockSchurBFBTPreconditioner (const LinearAlgebra::BlockSparseMatrix  &S,
+                                      const LinearAlgebra::BlockSparseMatrix  &Spre,
+                                      //const LinearAlgebra::Vector &velocity_diag_matrix,
+                                      const PreconditionerMp                     &Mppreconditioner,
+                                      const PreconditionerA                      &Apreconditioner,
+                                      const bool                                  do_solve_A,
+                                      const double                                A_block_tolerance,
+                                      const double                                S_block_tolerance,
+                                      const DoFHandler<dim> &dofs);
+
+        /**
+         * Matrix vector product with this preconditioner object.
+         */
+        void vmult (LinearAlgebra::BlockVector       &dst,
+                    const LinearAlgebra::BlockVector &src) const;
+
+        unsigned int n_iterations_A() const;
+        unsigned int n_iterations_S() const;
+
+      private:
+        /**
+         * References to the various matrix object this preconditioner works on.
+         */
+        const LinearAlgebra::BlockSparseMatrix &stokes_matrix;
+        const LinearAlgebra::BlockSparseMatrix &stokes_preconditioner_matrix;
+        //const LinearAlgebra::Vector velocity_diag_lumped_matrix;
+        const PreconditionerMp                    &mp_preconditioner;
+        const PreconditionerA                     &a_preconditioner;
+
+        /**
+         * Whether to actually invert the $\tilde A$ part of the preconditioner matrix
+         * or to just apply a single preconditioner step with it.
+         **/
+        const bool do_solve_A;
+        mutable unsigned int n_iterations_A_;
+        mutable unsigned int n_iterations_S_;
+        const double A_block_tolerance;
+        const double S_block_tolerance;
+
+
+
+        SmartPointer<const DoFHandler<dim>> dofs;
+    };
+
+
+    template <int dim,class PreconditionerA, class PreconditionerMp>
+    BlockSchurBFBTPreconditioner<dim,PreconditionerA, PreconditionerMp>::
+    BlockSchurBFBTPreconditioner (const LinearAlgebra::BlockSparseMatrix  &S,
+                                  const LinearAlgebra::BlockSparseMatrix  &Spre,
+                                  //const LinearAlgebra::Vector &velocity_diag_matrix,
+                                  const PreconditionerMp                     &Mppreconditioner,
+                                  const PreconditionerA                      &Apreconditioner,
+                                  const bool                                  do_solve_A,
+                                  const double                                A_block_tolerance,
+                                  const double                                S_block_tolerance,
+                                  const DoFHandler<dim> &dofs)
+      :
+      stokes_matrix     (S),
+      stokes_preconditioner_matrix     (Spre),
+      //velocity_diag_lumped_matrix (velocity_diag_matrix),
+      mp_preconditioner (Mppreconditioner),
+      a_preconditioner  (Apreconditioner),
+      do_solve_A        (do_solve_A),
+      n_iterations_A_(0),
+      n_iterations_S_(0),
+      A_block_tolerance(A_block_tolerance),
+      S_block_tolerance(S_block_tolerance),
+      dofs(&dofs)
+    {}
+
+    template <int dim,class PreconditionerA, class PreconditionerMp>
+    unsigned int
+    BlockSchurBFBTPreconditioner<dim,PreconditionerA, PreconditionerMp>::
+    n_iterations_A() const
+    {
+      return n_iterations_A_;
+    }
+
+    template <int dim,class PreconditionerA, class PreconditionerMp>
+    unsigned int
+    BlockSchurBFBTPreconditioner<dim,PreconditionerA, PreconditionerMp>::
+    n_iterations_S() const
+    {
+      return n_iterations_S_;
+    }
+
+    template <int dim,class PreconditionerA, class PreconditionerMp>
+    void
+    BlockSchurBFBTPreconditioner<dim,PreconditionerA, PreconditionerMp>::
+    vmult (LinearAlgebra::BlockVector       &dst,
+           const LinearAlgebra::BlockVector &src) const
+    {
+      LinearAlgebra::Vector utmp(src.block(0));
+      LinearAlgebra::Vector ptmp(src.block(1));
+
+      // first solve with the bottom left block
+      {
+        SolverControl solver_control(1000, src.block(1).l2_norm() * S_block_tolerance);
+
+#ifdef ASPECT_USE_PETSC
+        SolverCG<LinearAlgebra::Vector> solver(solver_control);
+#else
+        TrilinosWrappers::SolverCG solver(solver_control);
+#endif
+
+
+        {
+          // S^-1 = (B C^-1 BT)^-1 (B C^-1 A D^-1 BT) (B C^-1 BT)^-1
+
+          // * step 1:
+
+          //std::cout << src.block(1).l2_norm() << " (BBt)-> ";
+
+          ptmp = 0.0;
+
+          if (false)
+            {
+              if (src.block(1).l2_norm() > 1e-50)
+                {
+                  solver.solve(stokes_preconditioner_matrix.block(1,1),
+                               ptmp, src.block(1),
+                               mp_preconditioner);
+                  n_iterations_S_ += solver_control.last_step();
+                }
+            }
+          else
+            {
+              // one v cycle
+              mp_preconditioner.vmult(ptmp, src.block(1));
+              n_iterations_S_ += 1;
+            }
+
+          {
+            const double mean_pressure = dealii::VectorTools::compute_mean_value(
+                                           *dofs, QGauss<dim>(3), ptmp, 0);
+
+            ptmp.add(-mean_pressure);
+          }
+          //std::cout << mean_pressure << std::endl;
+
+          //std::cout << ptmp.l2_norm() << " (Bt)-> ";
+
+          // * step 2:
+
+          // utmp = BT ptmp:
+          stokes_matrix.block(0,1).vmult(utmp, ptmp);
+
+          //std::cout << utmp.l2_norm() << " (A)-> ";
+
+          // utmp = C^-1 utmp:
+          //utmp.scale(velocity_diag_lumped_matrix);
+
+          // dst = A utmp
+          stokes_matrix.block(0,0).vmult(dst.block(0), utmp);
+
+          //std::cout << dst.block(0).l2_norm() << " (B)-> ";
+
+          // dst = C^-1 dst:
+          //dst.block(0).scale(velocity_diag_lumped_matrix);
+
+          // ptmp = B dst:
+          stokes_matrix.block(1,0).vmult(ptmp, dst.block(0));
+
+          //std::cout << ptmp.l2_norm() << " (BBt)-> ";
+
+          // * step 3:
+          if (false)
+            {
+              dst.block(1) = 0.0;
+              if (ptmp.l2_norm() > 1e-50)
+                {
+                  solver.solve(stokes_preconditioner_matrix.block(1,1),
+                               dst.block(1), ptmp,
+                               mp_preconditioner);
+                  std::cout << "schur p3: " << solver_control.last_step() << std::endl;
+                  n_iterations_S_ += solver_control.last_step();
+                }
+            }
+          else
+            {
+              // one v cycle
+              mp_preconditioner.vmult(dst.block(1), ptmp);
+              n_iterations_S_ += 1;
+            }
+
+          {
+            const double mean_pressure = dealii::VectorTools::compute_mean_value(
+                                           *dofs, QGauss<dim>(3), dst.block(1), 0);
+
+            dst.block(1).add(-mean_pressure);
+          }
+
+          //std::cout << dst.block(1).l2_norm() << std::endl;
+
+        }
+
+        // TODO: needed?
+        dst.block(1) *= -1.0;
+      }
+
+      // apply the top right block
+      {
+        // utmp  = (- BT dst.p) + src.u
+        stokes_matrix.block(0,1).vmult(utmp, dst.block(1)); // B^T or J^{up}
+        utmp *= -1.0;
+        utmp += src.block(0);
+      }
+
+      // now either solve with the top left block (if do_solve_A==true)
+      // or just apply one preconditioner sweep (for the first few
+      // iterations of our two-stage outer GMRES iteration)
+      if (true)//do_solve_A == true)
+        {
+          SolverControl solver_control(10000, utmp.l2_norm() * A_block_tolerance);
+#ifdef ASPECT_USE_PETSC
+          SolverCG<LinearAlgebra::Vector> solver(solver_control);
+#else
+          TrilinosWrappers::SolverCG solver(solver_control);
+#endif
+          try
+            {
+              dst.block(0) = 0.0;
+              solver.solve(stokes_matrix.block(0,0), dst.block(0), utmp,
+                           a_preconditioner);
+              n_iterations_A_ += solver_control.last_step();
+            }
+          // if the solver fails, report the error from processor 0 with some additional
+          // information about its location, and throw a quiet exception on all other
+          // processors
+          catch (const std::exception &exc)
+            {
+              if (Utilities::MPI::this_mpi_process(src.block(0).get_mpi_communicator()) == 0)
+                AssertThrow (false,
+                             ExcMessage (std::string("The iterative (top left) solver in BlockSchurPreconditioner::vmult "
+                                                     "did not converge to a tolerance of "
+                                                     + Utilities::to_string(solver_control.tolerance()) +
+                                                     ". It reported the following error:\n\n")
+                                         +
+                                         exc.what()))
+                else
+                  throw QuietException();
+            }
+        }
+      else
+        {
+          a_preconditioner.vmult (dst.block(0), utmp);
+          n_iterations_A_ += 1;
+        }
+    }
+
+
+
 
   }
 
@@ -792,7 +1080,7 @@ namespace aspect
 
         // create Solver controls for the cheap and expensive solver phase
         SolverControl solver_control_cheap (parameters.n_cheap_stokes_solver_steps,
-                                            solver_tolerance);
+                                            solver_tolerance, true);
 
         SolverControl solver_control_expensive (parameters.n_expensive_stokes_solver_steps,
                                                 solver_tolerance);
@@ -818,81 +1106,121 @@ namespace aspect
                                         parameters.linear_solver_A_block_tolerance,
                                         parameters.linear_solver_S_block_tolerance);
 
-        // step 1a: try if the simple and fast solver
-        // succeeds in n_cheap_stokes_solver_steps steps or less.
-        try
+        const int my_rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+        if (my_rank == 0)
+          deallog.depth_console(4);
+
+        if (parameters.use_wbfbt)
           {
-            // if this cheaper solver is not desired, then simply short-cut
-            // the attempt at solving with the cheaper preconditioner
-            if (parameters.n_cheap_stokes_solver_steps == 0)
-              throw SolverControl::NoConvergence(0,0);
+
+            FE_Q<dim> fe_p(1);
+            DoFHandler<dim> dof_handler_p(triangulation);
+            dof_handler_p.distribute_dofs(fe_p);
+            DoFRenumbering::hierarchical(dof_handler_p);
+
+            const internal::BlockSchurBFBTPreconditioner<dim,LinearAlgebra::PreconditionAMG,
+                  LinearAlgebra::PreconditionBase>
+                  preconditioner (system_matrix, system_preconditioner_matrix,
+                                  //preconditioner_velocity_mass_lump.block(0),
+                                  *Mp_preconditioner, *Amg_preconditioner,
+                                  false,
+                                  parameters.linear_solver_A_block_tolerance,
+                                  parameters.linear_solver_S_block_tolerance,
+                                  dof_handler_p);
 
             SolverFGMRES<LinearAlgebra::BlockVector>
             solver(solver_control_cheap, mem,
                    SolverFGMRES<LinearAlgebra::BlockVector>::
-                   AdditionalData(parameters.stokes_gmres_restart_length));
+                   AdditionalData(200));//parameters.stokes_gmres_restart_length));
 
             solver.solve (stokes_block,
                           distributed_stokes_solution,
                           distributed_stokes_rhs,
-                          preconditioner_cheap);
+                          preconditioner);
 
             final_linear_residual = solver_control_cheap.last_value();
+
+
           }
-
-        // step 1b: take the stronger solver in case
-        // the simple solver failed and attempt solving
-        // it in n_expensive_stokes_solver_steps steps or less.
-        catch (const SolverControl::NoConvergence &)
+        else
           {
-            // use the value defined by the user
-            // OR
-            // at least a restart length of 100 for melt models
-            const unsigned int number_of_temporary_vectors = (parameters.include_melt_transport == false ?
-                                                              parameters.stokes_gmres_restart_length :
-                                                              std::max(parameters.stokes_gmres_restart_length, 100U));
 
-            SolverFGMRES<LinearAlgebra::BlockVector>
-            solver(solver_control_expensive, mem,
-                   SolverFGMRES<LinearAlgebra::BlockVector>::
-                   AdditionalData(number_of_temporary_vectors));
-
+            // step 1a: try if the simple and fast solver
+            // succeeds in n_cheap_stokes_solver_steps steps or less.
             try
               {
-                AssertThrow (parameters.n_expensive_stokes_solver_steps>0,
-                             ExcMessage ("The Stokes solver did not converge in the number of requested cheap iterations and "
-                                         "you requested 0 for ``Maximum number of expensive Stokes solver steps''. Aborting."));
+                // if this cheaper solver is not desired, then simply short-cut
+                // the attempt at solving with the cheaper preconditioner
+                if (parameters.n_cheap_stokes_solver_steps == 0)
+                  throw SolverControl::NoConvergence(0,0);
 
-                solver.solve(stokes_block,
-                             distributed_stokes_solution,
-                             distributed_stokes_rhs,
-                             preconditioner_expensive);
+                SolverFGMRES<LinearAlgebra::BlockVector>
+                solver(solver_control_cheap, mem,
+                       SolverFGMRES<LinearAlgebra::BlockVector>::
+                       AdditionalData(parameters.stokes_gmres_restart_length));
 
-                final_linear_residual = solver_control_expensive.last_value();
+                solver.solve (stokes_block,
+                              distributed_stokes_solution,
+                              distributed_stokes_rhs,
+                              preconditioner_cheap);
+
+                final_linear_residual = solver_control_cheap.last_value();
               }
-            // if the solver fails, report the error from processor 0 with some additional
-            // information about its location, and throw a quiet exception on all other
-            // processors
-            catch (const std::exception &exc)
-              {
-                signals.post_stokes_solver(*this,
-                                           preconditioner_cheap.n_iterations_S() + preconditioner_expensive.n_iterations_S(),
-                                           preconditioner_cheap.n_iterations_A() + preconditioner_expensive.n_iterations_A(),
-                                           solver_control_cheap,
-                                           solver_control_expensive);
 
-                if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+            // step 1b: take the stronger solver in case
+            // the simple solver failed and attempt solving
+            // it in n_expensive_stokes_solver_steps steps or less.
+            catch (const SolverControl::NoConvergence &)
+              {
+                // use the value defined by the user
+                // OR
+                // at least a restart length of 100 for melt models
+                const unsigned int number_of_temporary_vectors = (parameters.include_melt_transport == false ?
+                                                                  parameters.stokes_gmres_restart_length :
+                                                                  std::max(parameters.stokes_gmres_restart_length, 100U));
+
+                SolverFGMRES<LinearAlgebra::BlockVector>
+                solver(solver_control_expensive, mem,
+                       SolverFGMRES<LinearAlgebra::BlockVector>::
+                       AdditionalData(number_of_temporary_vectors));
+
+                try
                   {
-                    linear_solver_failed("iterative Stokes solver",
-                                         parameters.output_directory+"solver_history.txt",
-                                         parameters.n_cheap_stokes_solver_steps > 0 ?
-                                         std::vector<SolverControl> {solver_control_cheap, solver_control_expensive} :
-                                         std::vector<SolverControl> {solver_control_expensive},
-                                         exc);
+                    AssertThrow (parameters.n_expensive_stokes_solver_steps>0,
+                                 ExcMessage ("The Stokes solver did not converge in the number of requested cheap iterations and "
+                                             "you requested 0 for ``Maximum number of expensive Stokes solver steps''. Aborting."));
+
+                    solver.solve(stokes_block,
+                                 distributed_stokes_solution,
+                                 distributed_stokes_rhs,
+                                 preconditioner_expensive);
+
+                    final_linear_residual = solver_control_expensive.last_value();
                   }
-                else
+                // if the solver fails, report the error from processor 0 with some additional
+                // information about its location, and throw a quiet exception on all other
+                // processors
+                catch (const std::exception &exc)
                   {
-                    throw QuietException();
+                    signals.post_stokes_solver(*this,
+                                               preconditioner_cheap.n_iterations_S() + preconditioner_expensive.n_iterations_S(),
+                                               preconditioner_cheap.n_iterations_A() + preconditioner_expensive.n_iterations_A(),
+                                               solver_control_cheap,
+                                               solver_control_expensive);
+
+                    if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+                      {
+                        linear_solver_failed("iterative Stokes solver",
+                                             parameters.output_directory+"solver_history.txt",
+                                             parameters.n_cheap_stokes_solver_steps > 0 ?
+                                             std::vector<SolverControl> {solver_control_cheap, solver_control_expensive} :
+                                             std::vector<SolverControl> {solver_control_expensive},
+                                             exc);
+                      }
+                    else
+                      {
+                        throw QuietException();
+                      }
                   }
               }
           }

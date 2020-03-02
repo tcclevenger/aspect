@@ -128,7 +128,12 @@ namespace aspect
   Simulator<dim>::
   set_default_assemblers()
   {
-    assemblers->stokes_preconditioner.push_back(std_cxx14::make_unique<aspect::Assemblers::StokesPreconditioner<dim> >());
+    //assemblers->stokes_preconditioner.push_back(std_cxx14::make_unique<aspect::Assemblers::StokesPreconditioner<dim> >());
+    if (parameters.use_wbfbt)
+      assemblers->stokes_preconditioner.push_back(std_cxx14::make_unique<aspect::Assemblers::StokesBFBTPreconditioner<dim> >());
+    else
+      assemblers->stokes_preconditioner.push_back(std_cxx14::make_unique<aspect::Assemblers::StokesPreconditioner<dim> >());
+
     assemblers->stokes_system.push_back(std_cxx14::make_unique<aspect::Assemblers::StokesIncompressibleTerms<dim> >());
 
     if (material_model->is_compressible())
@@ -446,7 +451,7 @@ namespace aspect
                                       introspection.component_masks.velocities,
                                       constant_modes);
 
-    if (parameters.include_melt_transport)
+    if (parameters.include_melt_transport || parameters.use_wbfbt)
       Mp_preconditioner = std_cxx14::make_unique<LinearAlgebra::PreconditionAMG>();
     else
       Mp_preconditioner = std_cxx14::make_unique<LinearAlgebra::PreconditionILU>();
@@ -488,7 +493,7 @@ namespace aspect
      *  does the mass matrix, we just reuse the same system_preconditioner_matrix
      *  for the Mp_preconditioner block.  Maybe a bit messy*/
 
-    if (parameters.include_melt_transport == false)
+    if (!parameters.include_melt_transport && !parameters.use_wbfbt)
       {
         LinearAlgebra::PreconditionILU *Mp_preconditioner_ILU
           = dynamic_cast<LinearAlgebra::PreconditionILU *> (Mp_preconditioner.get());
@@ -501,19 +506,20 @@ namespace aspect
 #ifdef ASPECT_USE_PETSC
         Amg_data.symmetric_operator = false;
 #else
-        std::vector<std::vector<bool> > constant_modes;
+        //std::vector<std::vector<bool> > constant_modes;
         dealii::ComponentMask cm_pressure = introspection.component_masks.pressure;
         if (parameters.include_melt_transport)
           cm_pressure = cm_pressure | introspection.variable("compaction pressure").component_mask;
         DoFTools::extract_constant_modes (dof_handler,
                                           cm_pressure,
-                                          constant_modes);
+                                          Amg_data.constant_modes);
 
         Amg_data.elliptic = true;
         Amg_data.higher_order_elements = false;
 
         Amg_data.smoother_sweeps = 2;
         Amg_data.coarse_type = "symmetric Gauss-Seidel";
+        //Amg_data.n_cycles = 1;
 #endif
 
         LinearAlgebra::PreconditionAMG *Mp_preconditioner_AMG
@@ -521,7 +527,7 @@ namespace aspect
         Mp_preconditioner_AMG->initialize (system_preconditioner_matrix.block(1,1), Amg_data);
       }
 
-    if (parameters.mesh_deformation_enabled || parameters.include_melt_transport || parameters.use_full_A_block_preconditioner)
+    if (parameters.mesh_deformation_enabled || parameters.include_melt_transport || parameters.use_full_A_block_preconditioner || parameters.use_wbfbt)
       Amg_preconditioner->initialize (system_matrix.block(0,0),
                                       Amg_data);
     else

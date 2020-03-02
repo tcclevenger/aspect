@@ -54,7 +54,7 @@ namespace aspect
           div_phi_u (stokes_dofs_per_cell, numbers::signaling_nan<double>()),
           phi_p (stokes_dofs_per_cell, numbers::signaling_nan<double>()),
           phi_p_c (add_compaction_pressure ? stokes_dofs_per_cell : 0, numbers::signaling_nan<double>()),
-          grad_phi_p (add_compaction_pressure ? stokes_dofs_per_cell : 0, numbers::signaling_nan<Tensor<1,dim> >()),
+          grad_phi_p (stokes_dofs_per_cell,numbers::signaling_nan<Tensor<1,dim> >()),//add_compaction_pressure ? stokes_dofs_per_cell : 0, numbers::signaling_nan<Tensor<1,dim> >()),
           material_model_inputs(quadrature.size(), n_compositional_fields),
           material_model_outputs(quadrature.size(), n_compositional_fields),
           rebuild_stokes_matrix(rebuild_matrix)

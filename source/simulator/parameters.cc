@@ -411,6 +411,15 @@ namespace aspect
                            "memory usage of the Stokes solver, and makes individual Stokes iterations more "
                            "expensive.");
 
+
+        prm.declare_entry ("Use weighted BFBT Stokes approximation", "false",
+                           Patterns::Bool(),
+                           "TODO");
+
+
+
+
+
         prm.declare_entry ("Linear solver A block tolerance", "1e-2",
                            Patterns::Double(0,1),
                            "A relative tolerance up to which the approximate inverse of the $A$ block "
@@ -1323,6 +1332,8 @@ namespace aspect
         use_full_A_block_preconditioner = prm.get_bool ("Use full A block as preconditioner");
         linear_solver_S_block_tolerance = prm.get_double ("Linear solver S block tolerance");
         stokes_gmres_restart_length     = prm.get_integer("GMRES solver restart length");
+
+        use_wbfbt = prm.get_bool("Use weighted BFBT Stokes approximation");
       }
       prm.leave_subsection ();
       prm.enter_subsection ("AMG parameters");
