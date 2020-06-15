@@ -43,6 +43,8 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 
+using gmg_number = float;
+
 namespace aspect
 {
   using namespace dealii;
@@ -360,14 +362,14 @@ namespace aspect
        * Return a pointer to the MGTransfer object used for the A block
        * of the block GMG Stokes solver.
        */
-      virtual const MGTransferMatrixFree<dim,double> &
+      virtual const MGTransferMatrixFree<dim,gmg_number> &
       get_mg_transfer_A () const = 0;
 
       /**
        * Return a pointer to the MGTransfer object used for the Schur
        * complement block of the block GMG Stokes solver.
        */
-      virtual const MGTransferMatrixFree<dim,double> &
+      virtual const MGTransferMatrixFree<dim,gmg_number> &
       get_mg_transfer_S () const = 0;
 
       /**
@@ -381,7 +383,7 @@ namespace aspect
        * Return a pointer to the Tables containing the viscosities on
        * the multigrid levels used in the block GMG Stokes solver.
        */
-      virtual const MGLevelObject<Table<1, VectorizedArray<double>>> &
+      virtual const MGLevelObject<Table<1, VectorizedArray<gmg_number>>> &
       get_level_viscosity_tables() const = 0;
   };
 
@@ -494,14 +496,14 @@ namespace aspect
        * Return a pointer to the MGTransfer object used for the A block
        * of the block GMG Stokes solver.
        */
-      const MGTransferMatrixFree<dim,double> &
+      const MGTransferMatrixFree<dim,gmg_number> &
       get_mg_transfer_A () const override;
 
       /**
        * Return a pointer to the MGTransfer object used for the Schur
        * complement block of the block GMG Stokes solver.
        */
-      const MGTransferMatrixFree<dim,double> &
+      const MGTransferMatrixFree<dim,gmg_number> &
       get_mg_transfer_S () const override;
 
       /**
@@ -515,7 +517,7 @@ namespace aspect
        * Return a pointer to the Tables containing the viscosities on
        * the multigrid levels used in the block GMG Stokes solver.
        */
-      const MGLevelObject<Table<1, VectorizedArray<double>>> &
+      const MGLevelObject<Table<1, VectorizedArray<gmg_number>>> &
       get_level_viscosity_tables() const override;
 
     private:
@@ -536,15 +538,18 @@ namespace aspect
       FESystem<dim> fe_projection;
 
       Table<1, VectorizedArray<double>> active_viscosity_table;
-      MGLevelObject<Table<1, VectorizedArray<double>>> level_viscosity_tables;
+      MGLevelObject<Table<1, VectorizedArray<gmg_number>>> level_viscosity_tables;
 
       // This variable is needed only in the setup in both evaluate_material_model()
       // and build_preconditioner(). It will be deleted after the last use.
-      MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_viscosity_vector;
+      MGLevelObject<dealii::LinearAlgebra::distributed::Vector<gmg_number> > level_viscosity_vector;
 
-      typedef MatrixFreeStokesOperators::StokesOperator<dim,velocity_degree,double> StokesMatrixType;
-      typedef MatrixFreeStokesOperators::MassMatrixOperator<dim,velocity_degree-1,double> SchurComplementMatrixType;
-      typedef MatrixFreeStokesOperators::ABlockOperator<dim,velocity_degree,double> ABlockMatrixType;
+      using StokesMatrixType = MatrixFreeStokesOperators::StokesOperator<dim,velocity_degree,double>;
+      using SchurComplementMatrixType = MatrixFreeStokesOperators::MassMatrixOperator<dim,velocity_degree-1,double>;
+      using ABlockMatrixType = MatrixFreeStokesOperators::ABlockOperator<dim,velocity_degree,double>;
+
+      using GMGSchurComplementMatrixType = MatrixFreeStokesOperators::MassMatrixOperator<dim,velocity_degree-1,gmg_number>;
+      using GMGABlockMatrixType = MatrixFreeStokesOperators::ABlockOperator<dim,velocity_degree,gmg_number>;
 
       StokesMatrixType stokes_matrix;
       ABlockMatrixType A_block_matrix;
@@ -553,15 +558,15 @@ namespace aspect
       ConstraintMatrix constraints_v;
       ConstraintMatrix constraints_p;
 
-      MGLevelObject<ABlockMatrixType> mg_matrices_A_block;
-      MGLevelObject<SchurComplementMatrixType> mg_matrices_Schur_complement;
+      MGLevelObject<GMGABlockMatrixType> mg_matrices_A_block;
+      MGLevelObject<GMGSchurComplementMatrixType> mg_matrices_Schur_complement;
 
       MGConstrainedDoFs mg_constrained_dofs_A_block;
       MGConstrainedDoFs mg_constrained_dofs_Schur_complement;
       MGConstrainedDoFs mg_constrained_dofs_projection;
 
-      MGTransferMatrixFree<dim,double> mg_transfer_A_block;
-      MGTransferMatrixFree<dim,double> mg_transfer_Schur_complement;
+      MGTransferMatrixFree<dim,gmg_number> mg_transfer_A_block;
+      MGTransferMatrixFree<dim,gmg_number> mg_transfer_Schur_complement;
   };
 }
 
