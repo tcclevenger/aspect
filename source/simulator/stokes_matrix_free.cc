@@ -1319,7 +1319,7 @@ namespace aspect
     level_viscosity_vector = 0.;
     level_viscosity_vector.resize(0,n_levels-1);
 
-    MGTransferMatrixFree<dim,gmg_number> transfer;
+    MGTransferMatrixFree<dim,GMGNumberType> transfer;
     transfer.build(dof_handler_projection);
     transfer.template interpolate_to_mg<double>(dof_handler_projection,
                                level_viscosity_vector,
@@ -1441,7 +1441,7 @@ namespace aspect
     double final_linear_residual      = numbers::signaling_nan<double>();
 
     // Below we define all the objects needed to build the GMG preconditioner:
-    using vector_t = dealii::LinearAlgebra::distributed::Vector<gmg_number>;
+    using vector_t = dealii::LinearAlgebra::distributed::Vector<GMGNumberType>;
 
     // ABlock GMG Smoother: Chebyshev, degree 4
     typedef PreconditionChebyshev<GMGABlockMatrixType,vector_t> ASmootherType;
@@ -1562,7 +1562,7 @@ namespace aspect
     mg_Schur.set_edge_matrices(mg_interface_Schur, mg_interface_Schur);
 
     // GMG Preconditioner for ABlock and Schur complement
-    typedef PreconditionMG<dim, vector_t, MGTransferMatrixFree<dim,gmg_number> > GMGPreconditioner;
+    typedef PreconditionMG<dim, vector_t, MGTransferMatrixFree<dim,GMGNumberType> > GMGPreconditioner;
     GMGPreconditioner prec_A(dof_handler_v, mg_A, mg_transfer_A_block);
     GMGPreconditioner prec_Schur(dof_handler_p, mg_Schur, mg_transfer_Schur_complement);
 
@@ -2112,9 +2112,9 @@ namespace aspect
             }
 
           {
-            typename MatrixFree<dim,gmg_number>::AdditionalData additional_data;
+            typename MatrixFree<dim,GMGNumberType>::AdditionalData additional_data;
             additional_data.tasks_parallel_scheme =
-              MatrixFree<dim,gmg_number>::AdditionalData::none;
+              MatrixFree<dim,GMGNumberType>::AdditionalData::none;
             additional_data.mapping_update_flags = (update_gradients | update_JxW_values |
                                                     update_quadrature_points);
 #if DEAL_II_VERSION_GTE(9,2,0)
@@ -2122,8 +2122,8 @@ namespace aspect
 #else
             additional_data.level_mg_handler = level;
 #endif
-            std::shared_ptr<MatrixFree<dim,gmg_number> >
-            mg_mf_storage_level(new MatrixFree<dim,gmg_number>());
+            std::shared_ptr<MatrixFree<dim,GMGNumberType> >
+            mg_mf_storage_level(new MatrixFree<dim,GMGNumberType>());
             mg_mf_storage_level->reinit(*sim.mapping, dof_handler_v, level_constraints,
                                         QGauss<1>(sim.parameters.stokes_velocity_degree+1),
                                         additional_data);
@@ -2147,9 +2147,9 @@ namespace aspect
           level_constraints.close();
 
           {
-            typename MatrixFree<dim,gmg_number>::AdditionalData additional_data;
+            typename MatrixFree<dim,GMGNumberType>::AdditionalData additional_data;
             additional_data.tasks_parallel_scheme =
-              MatrixFree<dim,gmg_number>::AdditionalData::none;
+              MatrixFree<dim,GMGNumberType>::AdditionalData::none;
             additional_data.mapping_update_flags = (update_values | update_JxW_values |
                                                     update_quadrature_points);
 #if DEAL_II_VERSION_GTE(9,2,0)
@@ -2157,8 +2157,8 @@ namespace aspect
 #else
             additional_data.level_mg_handler = level;
 #endif
-            std::shared_ptr<MatrixFree<dim,gmg_number> >
-            mg_mf_storage_level(new MatrixFree<dim,gmg_number>());
+            std::shared_ptr<MatrixFree<dim,GMGNumberType> >
+            mg_mf_storage_level(new MatrixFree<dim,GMGNumberType>());
             mg_mf_storage_level->reinit(*sim.mapping, dof_handler_p, level_constraints,
                                         QGauss<1>(sim.parameters.stokes_velocity_degree+1),
                                         additional_data);
@@ -2286,7 +2286,8 @@ namespace aspect
 
             diagonal_matrix.compress(VectorOperation::add);
 
-            dealii::LinearAlgebra::distributed::Vector<gmg_number> diagonal;
+            dealii::LinearAlgebra::distributed::Vector<GMGNumberType> diagonal;
+            // This assignment converts from type double to GMGNumberType (float).
             diagonal = diagonal_matrix.get_vector();
             mg_matrices_A_block[level].set_diagonal(diagonal);
           }
@@ -2343,7 +2344,7 @@ namespace aspect
 
 
   template <int dim, int velocity_degree>
-  const MGTransferMatrixFree<dim,gmg_number> &
+  const MGTransferMatrixFree<dim,GMGNumberType> &
   StokesMatrixFreeHandlerImplementation<dim, velocity_degree>::get_mg_transfer_A() const
   {
     return mg_transfer_A_block;
@@ -2351,7 +2352,7 @@ namespace aspect
 
 
   template <int dim, int velocity_degree>
-  const MGTransferMatrixFree<dim,gmg_number> &
+  const MGTransferMatrixFree<dim,GMGNumberType> &
   StokesMatrixFreeHandlerImplementation<dim, velocity_degree>::get_mg_transfer_S() const
   {
     return mg_transfer_Schur_complement;
@@ -2367,7 +2368,7 @@ namespace aspect
 
 
   template <int dim, int velocity_degree>
-  const MGLevelObject<Table<1, VectorizedArray<gmg_number>>> &
+  const MGLevelObject<Table<1, VectorizedArray<GMGNumberType>>> &
   StokesMatrixFreeHandlerImplementation<dim, velocity_degree>::get_level_viscosity_tables() const
   {
     return level_viscosity_tables;
