@@ -1322,8 +1322,8 @@ namespace aspect
     MGTransferMatrixFree<dim,GMGNumberType> transfer;
     transfer.build(dof_handler_projection);
     transfer.template interpolate_to_mg<double>(dof_handler_projection,
-                               level_viscosity_vector,
-                               active_viscosity_vector);
+                                                level_viscosity_vector,
+                                                active_viscosity_vector);
 
     level_viscosity_tables.resize(0,n_levels-1);
 
