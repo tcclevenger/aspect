@@ -1443,7 +1443,6 @@ namespace aspect
                                                 active_viscosity_vector);
 
     level_viscosity_tables.resize(0,n_levels-1);
-	
     for (unsigned int level=0; level<n_levels; ++level)
       {
         // Create multilevel viscosity tables. For DGQ0, this is one value per cell,
