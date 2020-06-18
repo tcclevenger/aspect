@@ -1364,13 +1364,14 @@ namespace aspect
                                         fe_projection,
                                         quadrature_formula,
                                         update_values);
-    std::vector<double> values_on_quad;
 
     // Create active mesh viscosity table. For DGQ0, this is one value per cell,
     // for DGQ1 this is n_q_points values per cell.
     {
       const unsigned int n_cells = stokes_matrix.get_matrix_free()->n_macro_cells();
       const unsigned int n_q_points = quadrature_formula.size();
+
+      std::vector<double> values_on_quad;
 
       if (dof_handler_projection.get_fe().degree == 0)
         active_viscosity_table.reinit(TableIndices<2>(n_cells, 1));
@@ -1450,6 +1451,7 @@ namespace aspect
         const unsigned int n_cells = mg_matrices_A_block[level].get_matrix_free()->n_macro_cells();
         const unsigned int n_q_points = quadrature_formula.size();
 
+        std::vector<GMGNumberType> values_on_quad;
         if (dof_handler_projection.get_fe().degree == 0)
           level_viscosity_tables[level].reinit(TableIndices<2>(n_cells, 1));
         else
