@@ -2053,7 +2053,7 @@ namespace aspect
               << (solver_control_expensive.last_step() != numbers::invalid_unsigned_int ?
                   solver_control_expensive.last_step():
                   0)
-              << " iterations. Solution: " << sim.solution.l2_norm();
+              << " iterations. Solution: " << solution_copy.l2_norm();
     sim.pcout << std::endl;
 
     // do some cleanup now that we have the solution
