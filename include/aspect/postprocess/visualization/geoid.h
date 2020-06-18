@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2016 - 2019 by the authors of the ASPECT code.
+  Copyright (C) 2016 - 2020 by the authors of the ASPECT code.
 
   This file is part of ASPECT.
 
@@ -56,9 +56,8 @@ namespace aspect
            * beginning of the program after parse_parameters is run and after
            * the SimulatorAccess (if applicable) is initialized.
           */
-          virtual
           void
-          initialize ();
+          initialize () override;
 
           /**
            * @copydoc DataPostprocessorScalar<dim>::evaluate_vector_field()
