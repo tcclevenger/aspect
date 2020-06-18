@@ -1363,9 +1363,11 @@ namespace aspect
     sim.pcout << std::endl
               << std::endl
               << "Double min/max: " << min_el << "/" << max_el
-              << "Float  min/max: " << (GMGNumberType)min_el << "/" << (GMGNumberType)max_el
+              << " Float  min/max: " << (GMGNumberType)min_el << "/" << (GMGNumberType)max_el
               << std::endl
               << std::endl;
+
+    sim.pcout << "Active: " << active_viscosity_vector.l2_norm() << std::endl;
 
 
     FEValues<dim> fe_values_projection (*(sim.mapping),
@@ -1453,6 +1455,8 @@ namespace aspect
     level_viscosity_tables.resize(0,n_levels-1);
     for (unsigned int level=0; level<n_levels; ++level)
       {
+        sim.pcout << "Level " << level << ": " << level_viscosity_vector[level].l2_norm() << std::endl;
+
         // Create multilevel viscosity tables. For DGQ0, this is one value per cell,
         // for DGQ1 this is n_q_points values per cell.
         const unsigned int n_cells = mg_matrices_A_block[level].get_matrix_free()->n_macro_cells();
