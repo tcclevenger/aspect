@@ -1443,7 +1443,7 @@ namespace aspect
                                                 active_viscosity_vector);
 
     level_viscosity_tables.resize(0,n_levels-1);
-
+	
     for (unsigned int level=0; level<n_levels; ++level)
       {
         // Create multilevel viscosity tables. For DGQ0, this is one value per cell,
@@ -1488,7 +1488,7 @@ namespace aspect
                     // of the evaluated viscosity on the active level.
                     for (unsigned int q=0; q<n_q_points; ++q)
                       level_viscosity_tables[level](cell,q)[i]
-                        = std::min(std::max(values_on_quad[q], min_el), max_el);
+                        = std::min(std::max(values_on_quad[q], (GMGNumberType)min_el), (GMGNumberType)max_el);
                   }
               }
           }
@@ -2404,7 +2404,7 @@ namespace aspect
                   DG_cell->get_active_or_mg_dof_indices(dg_dof_indices);
 
                   // For DGQ1, project viscosity from DoF vector to quadrature.
-                  std::vector<double> visc_on_quad(n_q_points);
+                  std::vector<GMGNumberType> visc_on_quad(n_q_points);
                   if (dof_handler_projection.get_fe().degree == 1)
                     {
                       fe_values_projection.reinit(DG_cell);
