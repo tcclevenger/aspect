@@ -1360,6 +1360,14 @@ namespace aspect
       active_viscosity_vector.compress(VectorOperation::insert);
     }
 
+    sim.pcout << std::endl
+              << std::endl
+              << "Double min/max: " << min_el << "/" << max_el
+              << "Float  min/max: " << (GMGNumberType)min_el << "/" << (GMGNumberType)max_el
+              << std::endl
+              << std::endl;
+
+
     FEValues<dim> fe_values_projection (*(sim.mapping),
                                         fe_projection,
                                         quadrature_formula,
