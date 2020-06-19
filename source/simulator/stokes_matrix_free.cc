@@ -1910,15 +1910,15 @@ namespace aspect
     solution_copy2.collect_sizes();
     solution_copy3.collect_sizes();
 
-    internal::ChangeVectorTypes::copy(solution_copy2,distributed_stokes_rhs);
-    internal::ChangeVectorTypes::copy(solution_copy3,distributed_stokes_rhs);
+    internal::ChangeVectorTypes::copy(solution_copy2,distributed_stokes_solution);
+    internal::ChangeVectorTypes::copy(solution_copy3,distributed_stokes_solution);
 
     stokes_matrix.vmult(solution_copy2,rhs_copy);
     preconditioner_cheap.vmult(solution_copy3,rhs_copy);
 
-    sim.pcout << "RHSCopy:     " << rhs_copy.l2_norm() << ", "
-              << "StokesVmult: " << solution_copy2.l2_norm() << ", "
-              << "PRECVmult:   " << solution_copy3.l2_norm() << std::endl;
+    sim.pcout << std::endl << "RHSCopy:     " << rhs_copy.l2_norm() << ", "
+              << std::endl << "StokesVmult: " << solution_copy2.l2_norm() << ", "
+              << std::endl << "PRECVmult:   " << solution_copy3.l2_norm() << std::endl;
 
 
 
