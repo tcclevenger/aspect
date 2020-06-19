@@ -1812,7 +1812,9 @@ namespace aspect
         internal::ChangeVectorTypes::copy(initial_copy,linearized_stokes_initial_guess);
         internal::ChangeVectorTypes::copy(rhs_copy,distributed_stokes_rhs);
 
-        sim.pcout << std::endl << "LinInitial:   " << initial_copy.l2_norm()
+        sim.pcout << std::endl << "LinInitial:   " << initial_copy.l2_norm() << ", "
+                     << "LinInitial:   " << solution_copy.l2_norm() << ", "
+                     << "LinInitial:   " << rhs_copy.l2_norm() << ", "
                   << std::endl;
 
         // Compute residual l2_norm
