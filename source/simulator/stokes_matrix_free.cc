@@ -1899,6 +1899,29 @@ namespace aspect
 
     PrimitiveVectorMemory<dealii::LinearAlgebra::distributed::BlockVector<double> > mem;
 
+
+
+    dealii::LinearAlgebra::distributed::BlockVector<double> solution_copy(2);
+    dealii::LinearAlgebra::distributed::BlockVector<double> solution_copy2(2);
+
+    stokes_matrix.initialize_dof_vector(solution_copy);
+    stokes_matrix.initialize_dof_vector(solution_copy2);
+
+    solution_copy.collect_sizes();
+    solution_copy2.collect_sizes();
+
+    internal::ChangeVectorTypes::copy(solution_copy,distributed_stokes_rhs);
+    internal::ChangeVectorTypes::copy(solution_copy2,distributed_stokes_rhs);
+
+    stokes_matrix.vmult(solution_copy,rhs_copy);
+    preconditioner_cheap.vmult(solution_copy2,rhs_copy);
+
+    sim.pcout << "RHSCopy:     " << rhs_copy.l2_norm() << ", "
+              << "StokesVmult: " << solution_copy.l2_norm() << ", "
+              << "PRECVmult:   " << solution_copy2.l2_norm() << std::endl;
+
+
+
     // step 1a: try if the simple and fast solver
     // succeeds in n_cheap_stokes_solver_steps steps or less.
     try
