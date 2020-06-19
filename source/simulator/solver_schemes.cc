@@ -366,6 +366,10 @@ namespace aspect
         current_linearization_point.block(fluid_pressure_block) = solution.block(fluid_pressure_block);
       }
 
+    pcout << std::endl << "CurrentRES: " << current_nonlinear_residual
+          << std::endl << "InitialRES: " << *initial_nonlinear_residual
+          << std::endl;
+
     if ((initial_nonlinear_residual != nullptr) && (*initial_nonlinear_residual > 0))
       return current_nonlinear_residual / *initial_nonlinear_residual;
     else
