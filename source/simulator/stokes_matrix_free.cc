@@ -1917,6 +1917,7 @@ namespace aspect
     preconditioner_cheap.vmult(solution_copy3,rhs_copy);
 
     sim.pcout << std::endl << "InitialGuess: " << solution_copy.l2_norm()
+              << std::endl << "InitialRES:   " << initial_nonlinear_residual
               << std::endl << "RHSCopy:      " << rhs_copy.l2_norm()
               << std::endl << "StokesVmult:  " << solution_copy2.l2_norm()
               << std::endl << "PRECVmult:    " << solution_copy3.l2_norm()
