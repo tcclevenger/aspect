@@ -1814,7 +1814,15 @@ namespace aspect
 
         // Compute residual l2_norm
         stokes_matrix.vmult(solution_copy,initial_copy);
+
+        sim.pcout << std::endl << "LinInitial:   " << solution_copy.l2_norm()
+                  << std::endl;
+
         solution_copy.sadd(-1,1,rhs_copy);
+
+        sim.pcout << std::endl << "LinInitial:   " << solution_copy.l2_norm()
+                  << std::endl;
+
         initial_nonlinear_residual = solution_copy.l2_norm();
 
         sim.pcout << std::endl << "LinInitial:   " << solution_copy.l2_norm()
