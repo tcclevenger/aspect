@@ -1817,6 +1817,9 @@ namespace aspect
         solution_copy.sadd(-1,1,rhs_copy);
         initial_nonlinear_residual = solution_copy.l2_norm();
 
+        sim.pcout << std::endl << "LinInitial:   " << initial_copy.l2_norm()
+                  << std::endl;
+
         // Note: the residual is computed with a zero velocity, effectively computing
         // || B^T p - g ||, which we are going to use for our solver tolerance.
         // We do not use the current velocity for the initial residual because
