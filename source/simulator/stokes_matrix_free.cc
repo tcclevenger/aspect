@@ -1296,6 +1296,8 @@ namespace aspect
   {
     dealii::LinearAlgebra::distributed::Vector<double> active_viscosity_vector(dof_handler_projection.locally_owned_dofs(),
                                                                                sim.triangulation.get_communicator());
+    MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > double_level_viscosity_vector;
+
 
     const QGauss<dim> quadrature_formula (sim.parameters.stokes_velocity_degree+1);
 
@@ -1443,26 +1445,33 @@ namespace aspect
 
     // Project active viscosity vector to multilevel vectors
     const unsigned int n_levels = sim.triangulation.n_global_levels();
+    double_level_viscosity_vector = 0.;
+    double_level_viscosity_vector.resize(0,n_levels-1);
+
     level_viscosity_vector = 0.;
     level_viscosity_vector.resize(0,n_levels-1);
 
-    MGTransferMatrixFree<dim,GMGNumberType> transfer;
+    MGTransferMatrixFree<dim,double> transfer;
     transfer.build(dof_handler_projection);
-    transfer.template interpolate_to_mg<double>(dof_handler_projection,
-                                                level_viscosity_vector,
-                                                active_viscosity_vector);
+    transfer.interpolate_to_mg(dof_handler_projection,
+                               double_level_viscosity_vector,
+                               active_viscosity_vector);
 
     level_viscosity_tables.resize(0,n_levels-1);
     for (unsigned int level=0; level<n_levels; ++level)
       {
-        sim.pcout << "Level " << level << ": " << level_viscosity_vector[level].l2_norm() << std::endl;
+        level_viscosity_vector[level] = double_level_viscosity_vector[level];
+        level_viscosity_vector[level].update_ghost_values();
+
+        sim.pcout << "Level " << level << ": " << double_level_viscosity_vector[level].l2_norm()
+                  << ", " << level_viscosity_vector[level].l2_norm() << std::endl;
 
         // Create multilevel viscosity tables. For DGQ0, this is one value per cell,
         // for DGQ1 this is n_q_points values per cell.
         const unsigned int n_cells = mg_matrices_A_block[level].get_matrix_free()->n_macro_cells();
         const unsigned int n_q_points = quadrature_formula.size();
 
-        std::vector<GMGNumberType> values_on_quad;
+        std::vector<double> values_on_quad;
         if (dof_handler_projection.get_fe().degree == 0)
           level_viscosity_tables[level].reinit(TableIndices<2>(n_cells, 1));
         else
