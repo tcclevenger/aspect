@@ -1464,7 +1464,7 @@ namespace aspect
                                              relevant_dofs,
                                              sim.mpi_communicator);
 
-        for (auto i : dof_handler_projection.locally_owned_dofs())
+        for (auto i : dof_handler_projection.locally_owned_mg_dofs(level))
           level_viscosity_vector[level](i) = level_viscosity_vector_double[level](i);
 
         level_viscosity_vector[level].update_ghost_values();
