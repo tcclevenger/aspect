@@ -719,7 +719,7 @@ namespace aspect
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        VectorizedArray<number> viscosity_x_2 = 2.0*(number)(*viscosity)(cell, 0);
+        VectorizedArray<number> viscosity_x_2 = 2.0*(VectorizedArray<number>)(*viscosity)(cell, 0);
 
         velocity.reinit (cell);
         velocity.read_dof_values (src.block(0));
@@ -732,7 +732,7 @@ namespace aspect
           {
             // Only update the viscosity if a Q1 projection is used.
             if (use_viscosity_at_quadrature_points)
-              viscosity_x_2 = 2.0*(number)(*viscosity)(cell, q);
+              viscosity_x_2 = 2.0*(VectorizedArray<number>)(*viscosity)(cell, q);
 
             SymmetricTensor<2,dim,VectorizedArray<number>> sym_grad_u =
                                                           velocity.get_symmetric_gradient (q);
@@ -811,7 +811,7 @@ namespace aspect
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        VectorizedArray<number> one_over_viscosity = (number)(*viscosity)(cell, 0);
+        VectorizedArray<number> one_over_viscosity = (VectorizedArray<number>)(*viscosity)(cell, 0);
 
         // The /= operator for VectorizedArray results in a foating point operation
         // (divide by 0) since the (*viscosity)(cell) array is not completely filled.
@@ -828,7 +828,7 @@ namespace aspect
             // Only update the viscosity if a Q1 projection is used.
             if (use_viscosity_at_quadrature_points)
               {
-                one_over_viscosity = (number)(*viscosity)(cell, q);
+                one_over_viscosity = (VectorizedArray<number>)(*viscosity)(cell, q);
 
                 const unsigned int n_components_filled = this->get_matrix_free()->n_components_filled(cell);
                 for (unsigned int c=0; c<n_components_filled; ++c)
@@ -903,7 +903,7 @@ namespace aspect
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        VectorizedArray<number> one_over_viscosity = (number)(*viscosity)(cell, 0);
+        VectorizedArray<number> one_over_viscosity = (VectorizedArray<number>)(*viscosity)(cell, 0);
 
         // The /= operator for VectorizedArray results in a foating point operation
         // (divide by 0) since the (*viscosity)(cell) array is not completely filled.
@@ -926,7 +926,7 @@ namespace aspect
                 // Only update the viscosity if a Q1 projection is used.
                 if (use_viscosity_at_quadrature_points)
                   {
-                    one_over_viscosity = (number)(*viscosity)(cell, q);
+                    one_over_viscosity = (VectorizedArray<number>)(*viscosity)(cell, q);
 
                     const unsigned int n_components_filled = this->get_matrix_free()->n_components_filled(cell);
                     for (unsigned int c=0; c<n_components_filled; ++c)
@@ -989,7 +989,7 @@ namespace aspect
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        VectorizedArray<number> viscosity_x_2 = 2.0*(number)(*viscosity)(cell, 0);
+        VectorizedArray<number> viscosity_x_2 = 2.0*(VectorizedArray<number>)(*viscosity)(cell, 0);
 
         velocity.reinit (cell);
         velocity.read_dof_values(src);
@@ -998,7 +998,7 @@ namespace aspect
           {
             // Only update the viscosity if a Q1 projection is used.
             if (use_viscosity_at_quadrature_points)
-              viscosity_x_2 = 2.0*(number)(*viscosity)(cell, q);
+              viscosity_x_2 = 2.0*(VectorizedArray<number>)(*viscosity)(cell, q);
 
             SymmetricTensor<2,dim,VectorizedArray<number>> sym_grad_u =
                                                           velocity.get_symmetric_gradient (q);
@@ -1068,7 +1068,7 @@ namespace aspect
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
-        VectorizedArray<number> viscosity_x_2 = 2.0*(number)(*viscosity)(cell, 0);
+        VectorizedArray<number> viscosity_x_2 = 2.0*(VectorizedArray<number>)(*viscosity)(cell, 0);
 
         velocity.reinit (cell);
         AlignedVector<VectorizedArray<number> > diagonal(velocity.dofs_per_cell);
@@ -1083,7 +1083,7 @@ namespace aspect
               {
                 // Only update the viscosity if a Q1 projection is used.
                 if (use_viscosity_at_quadrature_points)
-                  viscosity_x_2 = 2.0*(number)(*viscosity)(cell, q);
+                  viscosity_x_2 = 2.0*(VectorizedArray<number>)(*viscosity)(cell, q);
 
                 SymmetricTensor<2,dim,VectorizedArray<number>> sym_grad_u =
                                                               velocity.get_symmetric_gradient (q);
