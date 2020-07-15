@@ -1449,6 +1449,7 @@ namespace aspect
     transfer.interpolate_to_mg(dof_handler_projection,
                                level_viscosity_vector_double,
                                active_viscosity_vector);
+    level_viscosity_vector_double[level].update_ghost_values();
 
     level_viscosity_tables.resize(0,n_levels-1);
     for (unsigned int level=0; level<n_levels; ++level)
@@ -1458,11 +1459,14 @@ namespace aspect
                                                       level,
                                                       relevant_dofs);
 
-        level_viscosity_vector[level].reinit(dof_handler_projection.locally_owned_dofs(),
+        level_viscosity_vector[level].reinit(dof_handler_projection.locally_owned_mg_dofs(level),
                                              relevant_dofs,
                                              sim.mpi_communicator);
+
         for (auto i : dof_handler_projection.locally_owned_dofs())
           level_viscosity_vector[level](i) = level_viscosity_vector_double[level](i);
+
+        level_viscosity_vector[level].update_ghost_values();
 
         // Create multilevel viscosity tables. For DGQ0, this is one value per cell,
         // for DGQ1 this is n_q_points values per cell.
