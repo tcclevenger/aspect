@@ -1449,11 +1449,12 @@ namespace aspect
     transfer.interpolate_to_mg(dof_handler_projection,
                                level_viscosity_vector_double,
                                active_viscosity_vector);
-    level_viscosity_vector_double[level].update_ghost_values();
 
     level_viscosity_tables.resize(0,n_levels-1);
     for (unsigned int level=0; level<n_levels; ++level)
       {
+        level_viscosity_vector_double[level].update_ghost_values();
+
         IndexSet relevant_dofs;
         DoFTools::extract_locally_relevant_level_dofs(dof_handler_projection,
                                                       level,
