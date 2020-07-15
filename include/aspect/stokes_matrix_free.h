@@ -80,7 +80,7 @@ namespace aspect
          * Fills in the viscosity table, sets the value for the pressure scaling constant,
          * and gives information regarding compressibility.
          */
-        void fill_cell_data (const Table<2, VectorizedArray<number>> &viscosity_table,
+        void fill_cell_data (const Table<2, VectorizedArray<double>> &viscosity_table,
                              const double pressure_scaling,
                              const bool is_compressible);
 
@@ -111,7 +111,7 @@ namespace aspect
         /**
          * Table which stores viscosity values for each cell.
          */
-        const Table<2, VectorizedArray<number>> *viscosity;
+        const Table<2, VectorizedArray<double>> *viscosity;
 
         /**
          * Pressure scaling constant.
@@ -148,7 +148,7 @@ namespace aspect
          * @p is_mg_level_data describes whether the viscosity values are defined for a multigrid level
          * matrix or for the active level matrix.
          */
-        void fill_cell_data (const Table<2, VectorizedArray<number>> &viscosity_table,
+        void fill_cell_data (const Table<2, VectorizedArray<double>> &viscosity_table,
                              const double pressure_scaling);
 
 
@@ -188,7 +188,7 @@ namespace aspect
         /**
          * Table which stores viscosity values for each cell.
          */
-        const Table<2, VectorizedArray<number>> *viscosity;
+        const Table<2, VectorizedArray<double>> *viscosity;
 
         /**
          * Pressure scaling constant.
@@ -221,7 +221,7 @@ namespace aspect
          * @p is_mg_level_data describes whether the viscosity values are defined for a multigrid level
          * matrix or for the active level matrix.
          */
-        void fill_cell_data (const Table<2, VectorizedArray<number>> &viscosity_table,
+        void fill_cell_data (const Table<2, VectorizedArray<double>> &viscosity_table,
                              const bool is_compressible);
 
         /**
@@ -266,7 +266,7 @@ namespace aspect
         /**
          * Table which stores viscosity values for each cell.
          */
-        const Table<2, VectorizedArray<number>> *viscosity;
+        const Table<2, VectorizedArray<double>> *viscosity;
 
         /**
           * Information on the compressibility of the flow.
@@ -386,7 +386,7 @@ namespace aspect
        * Return a pointer to the Tables containing the viscosities on
        * the multigrid levels used in the block GMG Stokes solver.
        */
-      virtual const MGLevelObject<Table<2, VectorizedArray<GMGNumberType>>> &
+      virtual const MGLevelObject<Table<2, VectorizedArray<double>>> &
       get_level_viscosity_tables() const = 0;
   };
 
@@ -520,7 +520,7 @@ namespace aspect
        * Return a pointer to the Tables containing the viscosities on
        * the multigrid levels used in the block GMG Stokes solver.
        */
-      const MGLevelObject<Table<2, VectorizedArray<GMGNumberType>>> &
+      const MGLevelObject<Table<2, VectorizedArray<double>>> &
       get_level_viscosity_tables() const override;
 
     private:
@@ -541,11 +541,11 @@ namespace aspect
       FESystem<dim> fe_projection;
 
       Table<2, VectorizedArray<double>> active_viscosity_table;
-      MGLevelObject<Table<2, VectorizedArray<GMGNumberType>>> level_viscosity_tables;
+      MGLevelObject<Table<2, VectorizedArray<double>>> level_viscosity_tables;
 
       // This variable is needed only in the setup in both evaluate_material_model()
       // and build_preconditioner(). It will be deleted after the last use.
-      MGLevelObject<dealii::LinearAlgebra::distributed::Vector<GMGNumberType> > level_viscosity_vector;
+      MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_viscosity_vector;
 
       using StokesMatrixType = MatrixFreeStokesOperators::StokesOperator<dim,velocity_degree,double>;
       using SchurComplementMatrixType = MatrixFreeStokesOperators::MassMatrixOperator<dim,velocity_degree-1,double>;

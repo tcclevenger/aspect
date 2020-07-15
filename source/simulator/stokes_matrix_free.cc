@@ -683,7 +683,7 @@ namespace aspect
   template <int dim, int degree_v, typename number>
   void
   MatrixFreeStokesOperators::StokesOperator<dim,degree_v,number>::
-  fill_cell_data (const Table<2, VectorizedArray<number>> &viscosity_table,
+  fill_cell_data (const Table<2, VectorizedArray<double>> &viscosity_table,
                   const double pressure_scaling,
                   const bool is_compressible)
   {
@@ -789,7 +789,7 @@ namespace aspect
   template <int dim, int degree_p, typename number>
   void
   MatrixFreeStokesOperators::MassMatrixOperator<dim,degree_p,number>::
-  fill_cell_data (const Table<2, VectorizedArray<number>> &viscosity_table,
+  fill_cell_data (const Table<2, VectorizedArray<double>> &viscosity_table,
                   const double pressure_scaling)
   {
     viscosity = &viscosity_table;
@@ -967,7 +967,7 @@ namespace aspect
   template <int dim, int degree_v, typename number>
   void
   MatrixFreeStokesOperators::ABlockOperator<dim,degree_v,number>::
-  fill_cell_data (const Table<2, VectorizedArray<number>> &viscosity_table,
+  fill_cell_data (const Table<2, VectorizedArray<double>> &viscosity_table,
                   const bool is_compressible)
   {
     viscosity = &viscosity_table;
@@ -1433,47 +1433,29 @@ namespace aspect
 
     // Project active viscosity vector to multilevel vectors
     const unsigned int n_levels = sim.triangulation.n_global_levels();
-
-    MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> > level_viscosity_vector_double;
-    level_viscosity_vector_double = 0.;
-    level_viscosity_vector_double.resize(0,n_levels-1);
-
     level_viscosity_vector = 0.;
     level_viscosity_vector.resize(0,n_levels-1);
 
+   // MGTransferMatrixFree<dim,GMGNumberType> transfer;
+   // transfer.build(dof_handler_projection);
+   // transfer.template interpolate_to_mg<double>(dof_handler_projection,
+   //                                             level_viscosity_vector,
+   //                                             active_viscosity_vector);
     MGTransferMatrixFree<dim,double> transfer;
     transfer.build(dof_handler_projection);
-    //transfer.template interpolate_to_mg<double>(dof_handler_projection,
-    //                                            level_viscosity_vector,
-    //                                            active_viscosity_vector);
     transfer.interpolate_to_mg(dof_handler_projection,
-                               level_viscosity_vector_double,
+                               level_viscosity_vector,
                                active_viscosity_vector);
 
     level_viscosity_tables.resize(0,n_levels-1);
     for (unsigned int level=0; level<n_levels; ++level)
       {
-        level_viscosity_vector_double[level].update_ghost_values();
-
-        IndexSet relevant_dofs;
-        DoFTools::extract_locally_relevant_level_dofs(dof_handler_projection,
-                                                      level,
-                                                      relevant_dofs);
-
-        level_viscosity_vector[level].reinit(dof_handler_projection.locally_owned_mg_dofs(level),
-                                             relevant_dofs,
-                                             sim.mpi_communicator);
-
-        for (auto i : dof_handler_projection.locally_owned_mg_dofs(level))
-          level_viscosity_vector[level](i) = level_viscosity_vector_double[level](i);
-
-        level_viscosity_vector[level].update_ghost_values();
-
         // Create multilevel viscosity tables. For DGQ0, this is one value per cell,
         // for DGQ1 this is n_q_points values per cell.
         const unsigned int n_cells = mg_matrices_A_block[level].get_matrix_free()->n_macro_cells();
         const unsigned int n_q_points = quadrature_formula.size();
 
+//        std::vector<GMGNumberType> values_on_quad;
         std::vector<double> values_on_quad;
         if (dof_handler_projection.get_fe().degree == 0)
           level_viscosity_tables[level].reinit(TableIndices<2>(n_cells, 1));
@@ -1498,12 +1480,12 @@ namespace aspect
                 DG_cell->get_active_or_mg_dof_indices(local_dof_indices);
 
                 if (dof_handler_projection.get_fe().degree == 0)
-                  level_viscosity_tables[level](cell, 0)[i] = level_viscosity_vector_double[level](local_dof_indices[0]);
+                  level_viscosity_tables[level](cell, 0)[i] = level_viscosity_vector[level](local_dof_indices[0]);
                 else
                   {
                     // For DGQ1, project back to quadrature point vaues
                     fe_values_projection.reinit(DG_cell);
-                    fe_values_projection.get_function_values(level_viscosity_vector_double[level],
+                    fe_values_projection.get_function_values(level_viscosity_vector[level],
                                                              local_dof_indices,
                                                              values_on_quad);
 
